@@ -52,7 +52,7 @@ export function Alert({
       `}
       role="alert"
     >
-      <div className="flex-shrink-0">{styles.icon}</div>
+      <div className="shrink-0">{styles.icon}</div>
       <div className="flex-1 min-w-0">
         {title && (
           <h4 className="text-sm font-semibold text-white mb-0.5">{title}</h4>
@@ -62,7 +62,7 @@ export function Alert({
       {onClose && (
         <button
           onClick={onClose}
-          className="flex-shrink-0 text-slate-400 hover:text-slate-300 transition-colors"
+          className="shrink-0 text-slate-400 hover:text-slate-300 transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
