@@ -80,7 +80,7 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
 
   return (
     <div className="mt-3 space-y-3">
-      {/* Strength Bar */}
+      {/* Barra de fuerza */}
       <div className="flex gap-1">
         {[0, 1, 2, 3].map((index) => (
           <div
@@ -92,7 +92,7 @@ function PasswordStrengthIndicator({ password }: { password: string }) {
         ))}
       </div>
 
-      {/* Requirements List */}
+      {/* Lista de requisitos */}
       <div className="grid grid-cols-2 gap-2">
         {requirements.map((req, index) => (
           <div
@@ -162,7 +162,7 @@ export default function SignupPage() {
     e.preventDefault();
     clearError();
 
-    // Validate
+    // Validar formulario
     const errors = validateForm(formData);
     setFormErrors(errors);
 
@@ -205,22 +205,22 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-8">
       <div className="w-full max-w-md">
-        {/* Logo */}
+        {/* Logo de la app */}
         <div className="flex justify-center mb-8">
           <Logo size="lg" />
         </div>
 
-        {/* Header */}
+        {/* Título y descripción */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Create an account</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Crear una cuenta</h1>
           <p className="text-slate-400">
-            Join BidPulse and start bidding in real-time auctions.
+            Únete a BidPulse y empieza a pujar en subastas en tiempo real.
           </p>
         </div>
 
-        {/* Form Container */}
+        {/* Formulario de registro */}
         <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-8">
-          {/* Error Alert */}
+          {/* Alerta de error */}
           {error && (
             <Alert
               variant="error"
@@ -231,11 +231,11 @@ export default function SignupPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Display Name Input */}
+            {/* Campo de nombre */}
             <Input
               type="text"
-              label="Full Name"
-              placeholder="John Doe"
+              label="Nombre completo"
+              placeholder="Juan Pérez"
               value={formData.displayName}
               onChange={(e) => updateField("displayName", e.target.value)}
               error={formErrors.displayName}
@@ -243,11 +243,11 @@ export default function SignupPage() {
               disabled={isSubmitting}
             />
 
-            {/* Email Input */}
+            {/* Campo de correo */}
             <Input
               type="email"
-              label="Email address"
-              placeholder="name@example.com"
+              label="Correo electrónico"
+              placeholder="nombre@ejemplo.com"
               value={formData.email}
               onChange={(e) => updateField("email", e.target.value)}
               error={formErrors.email}
@@ -255,12 +255,12 @@ export default function SignupPage() {
               disabled={isSubmitting}
             />
 
-            {/* Password Input */}
+            {/* Campo de contraseña */}
             <div>
               <Input
                 type="password"
-                label="Password"
-                placeholder="Create a strong password"
+                label="Contraseña"
+                placeholder="Crea una contraseña segura"
                 value={formData.password}
                 onChange={(e) => updateField("password", e.target.value)}
                 error={formErrors.password}
@@ -270,11 +270,11 @@ export default function SignupPage() {
               <PasswordStrengthIndicator password={formData.password} />
             </div>
 
-            {/* Confirm Password Input */}
+            {/* Confirmar contraseña */}
             <Input
               type="password"
-              label="Confirm Password"
-              placeholder="Confirm your password"
+              label="Confirmar contraseña"
+              placeholder="Confirma tu contraseña"
               value={formData.confirmPassword}
               onChange={(e) => updateField("confirmPassword", e.target.value)}
               error={formErrors.confirmPassword}
@@ -282,7 +282,7 @@ export default function SignupPage() {
               disabled={isSubmitting}
             />
 
-            {/* Terms Checkbox */}
+            {/* Aceptar términos */}
             <div className="flex items-start gap-3">
               <input
                 type="checkbox"
@@ -292,24 +292,24 @@ export default function SignupPage() {
                 className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
               />
               <label htmlFor="terms" className="text-sm text-slate-400">
-                I agree to the{" "}
+                Acepto los{" "}
                 <Link
                   href="/terms"
                   className="text-blue-400 hover:text-blue-300 transition-colors"
                 >
-                  Terms of Service
+                  Términos de Servicio
                 </Link>{" "}
-                and{" "}
+                y la{" "}
                 <Link
                   href="/privacy"
                   className="text-blue-400 hover:text-blue-300 transition-colors"
                 >
-                  Privacy Policy
+                  Política de Privacidad
                 </Link>
               </label>
             </div>
 
-            {/* Submit Button */}
+            {/* Botón crear cuenta */}
             <Button
               type="submit"
               fullWidth
@@ -317,23 +317,23 @@ export default function SignupPage() {
               isLoading={isSubmitting || loading}
               disabled={!acceptTerms}
             >
-              Create Account
+              Crear Cuenta
             </Button>
           </form>
 
-          {/* Divider */}
+          {/* Separador */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-700" />
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-4 bg-slate-900/50 text-slate-500">
-                Or continue with
+                O continúa con
               </span>
             </div>
           </div>
 
-          {/* Google Signup */}
+          {/* Botón registrarse con Google */}
           <Button
             type="button"
             variant="secondary"
@@ -343,28 +343,28 @@ export default function SignupPage() {
             onClick={handleGoogleSignup}
             disabled={isSubmitting}
           >
-            Continue with Google
+            Continuar con Google
           </Button>
         </div>
 
-        {/* Login Link */}
+        {/* Enlace a login */}
         <p className="text-center mt-6 text-slate-400">
-          Already have an account?{" "}
+          ¿Ya tienes una cuenta?{" "}
           <Link
             href="/login"
             className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
           >
-            Log In
+            Iniciar Sesión
           </Link>
         </p>
 
-        {/* Footer Links */}
+        {/* Enlaces legales */}
         <div className="flex justify-center gap-6 mt-6 text-sm text-slate-500">
           <Link href="/privacy" className="hover:text-slate-400 transition-colors">
-            Privacy Policy
+            Política de Privacidad
           </Link>
           <Link href="/terms" className="hover:text-slate-400 transition-colors">
-            Terms of Service
+            Términos de Servicio
           </Link>
         </div>
       </div>

@@ -65,7 +65,7 @@ export default function LoginPage() {
     e.preventDefault();
     clearError();
 
-    // Validate
+    // Validar formulario
     const errors = validateForm(email, password);
     setFormErrors(errors);
 
@@ -100,22 +100,22 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 px-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
+        {/* Logo de la app */}
         <div className="flex justify-center mb-8">
           <Logo size="lg" />
         </div>
 
-        {/* Header */}
+        {/* Título y descripción */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome back</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">Bienvenido de nuevo</h1>
           <p className="text-slate-400">
-            Enter your credentials to access real-time auctions.
+            Ingresa tus credenciales para acceder a subastas en tiempo real.
           </p>
         </div>
 
-        {/* Form Container */}
+        {/* Formulario de login */}
         <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-8">
-          {/* Error Alert */}
+          {/* Alerta de error */}
           {error && (
             <Alert
               variant="error"
@@ -126,11 +126,11 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Email Input */}
+            {/* Campo de correo */}
             <Input
               type="email"
-              label="Email address"
-              placeholder="name@example.com"
+              label="Correo electrónico"
+              placeholder="nombre@ejemplo.com"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -143,22 +143,22 @@ export default function LoginPage() {
               disabled={isSubmitting}
             />
 
-            {/* Password Input */}
+            {/* Campo de contraseña */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-sm font-medium text-gray-200">
-                  Password
+                  Contraseña
                 </label>
                 <Link
                   href="/forgot-password"
                   className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
                 >
-                  Forgot Password?
+                  ¿Olvidaste tu contraseña?
                 </Link>
               </div>
               <Input
                 type="password"
-                placeholder="Enter your password"
+                placeholder="Ingresa tu contraseña"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -172,30 +172,30 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Submit Button */}
+            {/* Botón iniciar sesión */}
             <Button
               type="submit"
               fullWidth
               size="lg"
               isLoading={isSubmitting || loading}
             >
-              Log In
+              Iniciar Sesión
             </Button>
           </form>
 
-          {/* Divider */}
+          {/* Separador */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-slate-700" />
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-4 bg-slate-900/50 text-slate-500">
-                Or continue with
+                O continúa con
               </span>
             </div>
           </div>
 
-          {/* Google Login */}
+          {/* Botón iniciar con Google */}
           <Button
             type="button"
             variant="secondary"
@@ -205,28 +205,28 @@ export default function LoginPage() {
             onClick={handleGoogleLogin}
             disabled={isSubmitting}
           >
-            Continue with Google
+            Continuar con Google
           </Button>
         </div>
 
-        {/* Sign Up Link */}
+        {/* Enlace a registro */}
         <p className="text-center mt-6 text-slate-400">
-          Don&apos;t have an account?{" "}
+          ¿No tienes una cuenta?{" "}
           <Link
             href="/signup"
             className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
           >
-            Sign Up
+            Regístrate
           </Link>
         </p>
 
-        {/* Footer Links */}
+        {/* Enlaces legales */}
         <div className="flex justify-center gap-6 mt-6 text-sm text-slate-500">
           <Link href="/privacy" className="hover:text-slate-400 transition-colors">
-            Privacy Policy
+            Política de Privacidad
           </Link>
           <Link href="/terms" className="hover:text-slate-400 transition-colors">
-            Terms of Service
+            Términos de Servicio
           </Link>
         </div>
       </div>

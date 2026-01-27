@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BidPulse | Real-Time Auctions",
-  description: "Experience high-performance real-time auctions with BidPulse. Bid, compete, and win.",
-  keywords: ["auctions", "real-time", "bidding", "online auctions"],
+  title: "BidPulse | Subastas en Tiempo Real",
+  description: "Subastas en tiempo real de alto rendimiento con BidPulse. Puja, compite y gana.",
+  keywords: ["subastas", "tiempo real", "pujas", "subastas online"],
 };
 
 export default function RootLayout({
@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
