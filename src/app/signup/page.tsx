@@ -1,0 +1,373 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
+import { Input, Button, Logo, Alert } from "@/components/ui";
+import { Check, X } from "lucide-react";
+
+interface FormErrors {
+  displayName?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+}
+
+interface FormData {
+  displayName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+function validateForm(data: FormData): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!data.displayName) {
+    errors.displayName = "El nombre es requerido.";
+  } else if (data.displayName.length < 2) {
+    errors.displayName = "El nombre debe tener al menos 2 caracteres.";
+  }
+
+  if (!data.email) {
+    errors.email = "El correo electrónico es requerido.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
+    errors.email = "Ingresa un correo electrónico válido.";
+  }
+
+  if (!data.password) {
+    errors.password = "La contraseña es requerida.";
+  } else if (data.password.length < 6) {
+    errors.password = "La contraseña debe tener al menos 6 caracteres.";
+  }
+
+  if (!data.confirmPassword) {
+    errors.confirmPassword = "Confirma tu contraseña.";
+  } else if (data.password !== data.confirmPassword) {
+    errors.confirmPassword = "Las contraseñas no coinciden.";
+  }
+
+  return errors;
+}
+
+interface PasswordRequirement {
+  label: string;
+  met: boolean;
+}
+
+function getPasswordRequirements(password: string): PasswordRequirement[] {
+  return [
+    { label: "Al menos 6 caracteres", met: password.length >= 6 },
+    { label: "Una letra mayúscula", met: /[A-Z]/.test(password) },
+    { label: "Una letra minúscula", met: /[a-z]/.test(password) },
+    { label: "Un número", met: /\d/.test(password) },
+  ];
+}
+
+function PasswordStrengthIndicator({ password }: { password: string }) {
+  const requirements = getPasswordRequirements(password);
+  const metCount = requirements.filter((r) => r.met).length;
+
+  const strengthColors = [
+    "bg-red-500",
+    "bg-orange-500",
+    "bg-yellow-500",
+    "bg-green-500",
+  ];
+
+  if (!password) return null;
+
+  return (
+    <div className="mt-3 space-y-3">
+      {/* Strength Bar */}
+      <div className="flex gap-1">
+        {[0, 1, 2, 3].map((index) => (
+          <div
+            key={index}
+            className={`h-1 flex-1 rounded-full transition-colors ${
+              index < metCount ? strengthColors[metCount - 1] : "bg-slate-700"
+            }`}
+          />
+        ))}
+      </div>
+
+      {/* Requirements List */}
+      <div className="grid grid-cols-2 gap-2">
+        {requirements.map((req, index) => (
+          <div
+            key={index}
+            className={`flex items-center gap-1.5 text-xs ${
+              req.met ? "text-green-400" : "text-slate-500"
+            }`}
+          >
+            {req.met ? (
+              <Check className="w-3.5 h-3.5" />
+            ) : (
+              <X className="w-3.5 h-3.5" />
+            )}
+            {req.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg className="w-5 h-5" viewBox="0 0 24 24">
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
+  );
+}
+
+export default function SignupPage() {
+  const router = useRouter();
+  const { signup, loginWithGoogle, error, clearError, loading } = useAuth();
+
+  const [formData, setFormData] = useState<FormData>({
+    displayName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+
+  const updateField = (field: keyof FormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearError();
+
+    // Validate
+    const errors = validateForm(formData);
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
+    if (!acceptTerms) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const result = await signup({
+      email: formData.email,
+      password: formData.password,
+      displayName: formData.displayName,
+    });
+
+    if (result.success) {
+      router.push("/");
+    }
+
+    setIsSubmitting(false);
+  };
+
+  const handleGoogleSignup = async () => {
+    clearError();
+    setIsSubmitting(true);
+
+    const result = await loginWithGoogle();
+
+    if (result.success) {
+      router.push("/");
+    }
+
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4 py-8">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex justify-center mb-8">
+          <Logo size="lg" />
+        </div>
+
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-white mb-2">Create an account</h1>
+          <p className="text-slate-400">
+            Join BidPulse and start bidding in real-time auctions.
+          </p>
+        </div>
+
+        {/* Form Container */}
+        <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-8">
+          {/* Error Alert */}
+          {error && (
+            <Alert
+              variant="error"
+              message={error.message}
+              onClose={clearError}
+              className="mb-6"
+            />
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Display Name Input */}
+            <Input
+              type="text"
+              label="Full Name"
+              placeholder="John Doe"
+              value={formData.displayName}
+              onChange={(e) => updateField("displayName", e.target.value)}
+              error={formErrors.displayName}
+              autoComplete="name"
+              disabled={isSubmitting}
+            />
+
+            {/* Email Input */}
+            <Input
+              type="email"
+              label="Email address"
+              placeholder="name@example.com"
+              value={formData.email}
+              onChange={(e) => updateField("email", e.target.value)}
+              error={formErrors.email}
+              autoComplete="email"
+              disabled={isSubmitting}
+            />
+
+            {/* Password Input */}
+            <div>
+              <Input
+                type="password"
+                label="Password"
+                placeholder="Create a strong password"
+                value={formData.password}
+                onChange={(e) => updateField("password", e.target.value)}
+                error={formErrors.password}
+                autoComplete="new-password"
+                disabled={isSubmitting}
+              />
+              <PasswordStrengthIndicator password={formData.password} />
+            </div>
+
+            {/* Confirm Password Input */}
+            <Input
+              type="password"
+              label="Confirm Password"
+              placeholder="Confirm your password"
+              value={formData.confirmPassword}
+              onChange={(e) => updateField("confirmPassword", e.target.value)}
+              error={formErrors.confirmPassword}
+              autoComplete="new-password"
+              disabled={isSubmitting}
+            />
+
+            {/* Terms Checkbox */}
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={acceptTerms}
+                onChange={(e) => setAcceptTerms(e.target.checked)}
+                className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
+              />
+              <label htmlFor="terms" className="text-sm text-slate-400">
+                I agree to the{" "}
+                <Link
+                  href="/terms"
+                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy"
+                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Privacy Policy
+                </Link>
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              fullWidth
+              size="lg"
+              isLoading={isSubmitting || loading}
+              disabled={!acceptTerms}
+            >
+              Create Account
+            </Button>
+          </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-700" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-slate-900/50 text-slate-500">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          {/* Google Signup */}
+          <Button
+            type="button"
+            variant="secondary"
+            fullWidth
+            size="lg"
+            leftIcon={<GoogleIcon />}
+            onClick={handleGoogleSignup}
+            disabled={isSubmitting}
+          >
+            Continue with Google
+          </Button>
+        </div>
+
+        {/* Login Link */}
+        <p className="text-center mt-6 text-slate-400">
+          Already have an account?{" "}
+          <Link
+            href="/login"
+            className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+          >
+            Log In
+          </Link>
+        </p>
+
+        {/* Footer Links */}
+        <div className="flex justify-center gap-6 mt-6 text-sm text-slate-500">
+          <Link href="/privacy" className="hover:text-slate-400 transition-colors">
+            Privacy Policy
+          </Link>
+          <Link href="/terms" className="hover:text-slate-400 transition-colors">
+            Terms of Service
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,141 @@
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut,
+  sendPasswordResetEmail,
+  updateProfile,
+  AuthError as FirebaseAuthError,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import {
+  AuthResult,
+  AuthError,
+  AuthErrorCode,
+  LoginCredentials,
+  SignupCredentials,
+} from "@/types/auth.types";
+
+const ERROR_MESSAGES: Record<AuthErrorCode, string> = {
+  "auth/email-already-in-use": "Este correo electrónico ya está registrado.",
+  "auth/invalid-email": "El correo electrónico no es válido.",
+  "auth/operation-not-allowed": "Operación no permitida. Contacta al soporte.",
+  "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.",
+  "auth/user-disabled": "Esta cuenta ha sido deshabilitada.",
+  "auth/user-not-found": "No existe una cuenta con este correo electrónico.",
+  "auth/wrong-password": "La contraseña es incorrecta.",
+  "auth/invalid-credential": "Credenciales inválidas. Verifica tu email y contraseña.",
+  "auth/too-many-requests": "Demasiados intentos fallidos. Intenta más tarde.",
+  "auth/network-request-failed": "Error de conexión. Verifica tu internet.",
+  "auth/popup-closed-by-user": "Se cerró la ventana de autenticación.",
+  "auth/account-exists-with-different-credential":
+    "Ya existe una cuenta con este email usando otro método de autenticación.",
+  unknown: "Ocurrió un error inesperado. Intenta nuevamente.",
+};
+
+function handleAuthError(error: unknown): AuthError {
+  const firebaseError = error as FirebaseAuthError;
+  const code = (firebaseError.code as AuthErrorCode) || "unknown";
+  const message = ERROR_MESSAGES[code] || ERROR_MESSAGES.unknown;
+
+  console.error("[AuthService Error]:", {
+    code: firebaseError.code,
+    message: firebaseError.message,
+  });
+
+  return { code, message };
+}
+
+export const AuthService = {
+  async login({ email, password }: LoginCredentials): Promise<AuthResult> {
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      return {
+        success: true,
+        data: userCredential.user,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: handleAuthError(error),
+      };
+    }
+  },
+
+  async signup({
+    email,
+    password,
+    displayName,
+  }: SignupCredentials): Promise<AuthResult> {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      await updateProfile(userCredential.user, { displayName });
+
+      return {
+        success: true,
+        data: userCredential.user,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: handleAuthError(error),
+      };
+    }
+  },
+
+  async loginWithGoogle(): Promise<AuthResult> {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: "select_account",
+      });
+
+      const userCredential = await signInWithPopup(auth, provider);
+      return {
+        success: true,
+        data: userCredential.user,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: handleAuthError(error),
+      };
+    }
+  },
+
+  async logout(): Promise<AuthResult<void>> {
+    try {
+      await signOut(auth);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: handleAuthError(error),
+      };
+    }
+  },
+
+  async resetPassword(email: string): Promise<AuthResult<void>> {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: handleAuthError(error),
+      };
+    }
+  },
+};
+
+export default AuthService;
