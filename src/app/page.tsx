@@ -1,15 +1,24 @@
-import { Navbar } from "@/components/layout/Navbar";
-import { HeroSection } from "@/components/home/HeroSection";
+import { Navbar } from "@/components/layout";
+import {
+  HeroSection,
+  EndingSoonSection,
+  PopularAuctionsSection,
+  CategoriesSection,
+} from "@/components/home";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Barra de navegación */}
       <Navbar />
-      <div className="pt-16">
-        {/* Sección principal con buscador */}
+
+      {/* Contenido principal */}
+      <main className="pt-16">
         <HeroSection />
-      </div>
+        <EndingSoonSection />
+        <PopularAuctionsSection />
+        <CategoriesSection />
+      </main>
     </div>
   );
 }
