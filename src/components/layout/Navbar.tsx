@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, User, Menu, X, LogOut, Settings, UserPlus } from "lucide-react";
+import { Search, User, Menu, X, LogOut, Settings, UserPlus, Gavel } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui";
 
@@ -113,6 +113,15 @@ export function Navbar() {
                       Editar perfil
                     </Link>
 
+                    <Link
+                      href="/my-auctions"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <Gavel className="w-4 h-4" />
+                      Mis subastas
+                    </Link>
+
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-slate-800 transition-colors cursor-pointer"
@@ -179,6 +188,11 @@ export function Navbar() {
                     <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                       <Button size="sm" variant="ghost" fullWidth>
                         Editar perfil
+                      </Button>
+                    </Link>
+                    <Link href="/my-auctions" onClick={() => setMobileMenuOpen(false)}>
+                      <Button size="sm" variant="ghost" fullWidth>
+                        Mis subastas
                       </Button>
                     </Link>
                     <button

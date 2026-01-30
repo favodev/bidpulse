@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
+import { ImagePlus, Loader2, X, ArrowLeft } from "lucide-react";
 import { Navbar } from "@/components/layout";
+import { Footer } from "@/components/layout";
 import { Input, Button, Alert } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
-import { createAuction } from "@/services/auction.service";
-import { AuctionCategory, CATEGORY_LABELS } from "@/types/auction.types";
+import { getAuction, updateAuction } from "@/services/auction.service";
+import { Auction, AuctionCategory, CATEGORY_LABELS } from "@/types/auction.types";
 
 // Comprimir imagen a Base64
 async function compressImage(file: File, maxWidth: number = 800): Promise<string> {
@@ -34,11 +35,15 @@ async function compressImage(file: File, maxWidth: number = 800): Promise<string
   });
 }
 
-export default function CreateAuctionPage() {
+export default function EditAuctionPage() {
   const router = useRouter();
-  const { user, userAvatar } = useAuth();
+  const params = useParams();
+  const auctionId = params.id as string;
+  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [auction, setAuction] = useState<Auction | null>(null);
+  const [loadingAuction, setLoadingAuction] = useState(true);
   const [loading, setLoading] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [error, setError] = useState("");
@@ -48,12 +53,54 @@ export default function CreateAuctionPage() {
     title: "",
     description: "",
     category: "other" as AuctionCategory,
-    startingPrice: "",
     reservePrice: "",
     bidIncrement: "1",
-    duration: "7",
     images: [] as string[],
   });
+
+  // Cargar la subasta
+  useEffect(() => {
+    async function loadAuction() {
+      try {
+        const data = await getAuction(auctionId);
+        if (!data) {
+          setError("Subasta no encontrada");
+          return;
+        }
+        
+        // Verificar que el usuario es el dueño
+        if (data.sellerId !== user?.uid) {
+          setError("No tienes permiso para editar esta subasta");
+          return;
+        }
+
+        // Verificar que no ha terminado
+        if (data.status === "ended" || data.endTime.toDate() < new Date()) {
+          setError("No puedes editar una subasta finalizada");
+          return;
+        }
+
+        setAuction(data);
+        setFormData({
+          title: data.title,
+          description: data.description || "",
+          category: data.category,
+          reservePrice: data.reservePrice?.toString() || "",
+          bidIncrement: data.bidIncrement.toString(),
+          images: data.images || [],
+        });
+      } catch (err) {
+        console.error(err);
+        setError("Error al cargar la subasta");
+      } finally {
+        setLoadingAuction(false);
+      }
+    }
+
+    if (user) {
+      loadAuction();
+    }
+  }, [auctionId, user]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -111,52 +158,41 @@ export default function CreateAuctionPage() {
     setError("");
     setSuccess("");
 
-    if (!user) {
-      setError("Debes iniciar sesión para crear una subasta");
+    if (!user || !auction) {
+      setError("Error de autenticación");
       return;
     }
 
-    if (!formData.title || !formData.startingPrice) {
-      setError("Completa los campos obligatorios");
+    if (!formData.title) {
+      setError("El título es obligatorio");
       return;
     }
 
     if (formData.images.length === 0) {
-      setError("Debes agregar al menos una imagen");
+      setError("Debes tener al menos una imagen");
       return;
     }
 
     setLoading(true);
 
     try {
-      const now = new Date();
-      const endDate = new Date(now.getTime() + parseInt(formData.duration) * 24 * 60 * 60 * 1000);
+      await updateAuction(auctionId, {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        images: formData.images,
+        reservePrice: formData.reservePrice ? parseFloat(formData.reservePrice) : undefined,
+        bidIncrement: parseFloat(formData.bidIncrement),
+      });
 
-      const auctionId = await createAuction(
-        {
-          title: formData.title,
-          description: formData.description,
-          category: formData.category,
-          images: formData.images,
-          startingPrice: parseFloat(formData.startingPrice),
-          reservePrice: formData.reservePrice ? parseFloat(formData.reservePrice) : undefined,
-          bidIncrement: parseFloat(formData.bidIncrement),
-          startTime: now,
-          endTime: endDate,
-        },
-        user.uid,
-        user.displayName || "Vendedor",
-        userAvatar || undefined
-      );
-
-      setSuccess("¡Subasta creada exitosamente!");
+      setSuccess("¡Subasta actualizada exitosamente!");
       
       setTimeout(() => {
         router.push(`/auction/${auctionId}`);
       }, 1500);
     } catch (err) {
       console.error(err);
-      setError("Error al crear la subasta. Intenta nuevamente.");
+      setError("Error al actualizar la subasta. Intenta nuevamente.");
     } finally {
       setLoading(false);
     }
@@ -167,21 +203,71 @@ export default function CreateAuctionPage() {
       <div className="min-h-screen bg-slate-950">
         <Navbar />
         <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] gap-4">
-          <p className="text-gray-400 text-lg">Debes iniciar sesión para crear una subasta</p>
+          <p className="text-gray-400 text-lg">Debes iniciar sesión</p>
           <Button onClick={() => router.push("/login")}>Iniciar sesión</Button>
         </div>
       </div>
     );
   }
 
+  if (loadingAuction) {
+    return (
+      <div className="min-h-screen bg-slate-950">
+        <Navbar />
+        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error && !auction) {
+    return (
+      <div className="min-h-screen bg-slate-950">
+        <Navbar />
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] gap-4">
+          <p className="text-red-400 text-lg">{error}</p>
+          <Button variant="outline" onClick={() => router.push("/my-auctions")}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Volver a mis subastas
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
       <Navbar />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-8">
-          Crear nueva subasta
-        </h1>
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <button
+            onClick={() => router.back()}
+            className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">Editar subasta</h1>
+            <p className="text-slate-500 text-sm">
+              Modifica los detalles de tu subasta
+            </p>
+          </div>
+        </div>
+
+        {/* Info importante */}
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
+          <p className="text-amber-400 text-sm">
+            <strong>Nota:</strong> No puedes modificar el precio inicial ni la duración una vez creada la subasta.
+            {auction && auction.bidsCount > 0 && (
+              <span className="block mt-1">
+                Esta subasta ya tiene {auction.bidsCount} puja(s).
+              </span>
+            )}
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && <Alert variant="error" message={error} />}
@@ -230,18 +316,8 @@ export default function CreateAuctionPage() {
             </select>
           </div>
 
-          {/* Precios */}
+          {/* Precios editables */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              label="Precio inicial *"
-              name="startingPrice"
-              type="number"
-              step="0.01"
-              min="1"
-              value={formData.startingPrice}
-              onChange={handleChange}
-              placeholder="100.00"
-            />
             <Input
               label="Precio reserva (opcional)"
               name="reservePrice"
@@ -252,9 +328,6 @@ export default function CreateAuctionPage() {
               onChange={handleChange}
               placeholder="500.00"
             />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Incremento mínimo"
               name="bidIncrement"
@@ -264,24 +337,31 @@ export default function CreateAuctionPage() {
               value={formData.bidIncrement}
               onChange={handleChange}
             />
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Duración
-              </label>
-              <select
-                name="duration"
-                value={formData.duration}
-                onChange={handleChange}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
-              >
-                <option value="1">1 día</option>
-                <option value="3">3 días</option>
-                <option value="5">5 días</option>
-                <option value="7">7 días</option>
-                <option value="14">14 días</option>
-              </select>
-            </div>
           </div>
+
+          {/* Info de precio y tiempo (solo lectura) */}
+          {auction && (
+            <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Precio inicial:</span>
+                <span className="text-white font-medium">
+                  ${auction.startingPrice.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Puja actual:</span>
+                <span className="text-emerald-400 font-medium">
+                  ${auction.currentBid.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-500">Termina:</span>
+                <span className="text-white font-medium">
+                  {auction.endTime.toDate().toLocaleString("es-MX")}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Imágenes */}
           <div>
@@ -289,7 +369,7 @@ export default function CreateAuctionPage() {
               Imágenes (máximo 5)
             </label>
 
-            {/* Imágenes seleccionadas */}
+            {/* Imágenes actuales */}
             {formData.images.length > 0 && (
               <div className="flex gap-2 flex-wrap mb-4">
                 {formData.images.map((img, index) => (
@@ -298,7 +378,7 @@ export default function CreateAuctionPage() {
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 bg-black/50 rounded-full p-1 cursor-pointer"
+                      className="absolute top-1 right-1 bg-black/50 rounded-full p-1 cursor-pointer hover:bg-black/70"
                     >
                       <X className="w-3 h-3 text-white" />
                     </button>
@@ -330,7 +410,7 @@ export default function CreateAuctionPage() {
                   <>
                     <ImagePlus className="w-8 h-8 text-gray-500 mx-auto mb-2" />
                     <p className="text-gray-400 text-sm">
-                      Clic para subir imágenes
+                      Clic para agregar más imágenes
                     </p>
                     <p className="text-gray-600 text-xs mt-1">
                       JPG, PNG hasta 10MB
@@ -341,16 +421,28 @@ export default function CreateAuctionPage() {
             )}
           </div>
 
-          {/* Botón submit */}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-            ) : (
-              "Crear subasta"
-            )}
-          </Button>
+          {/* Botones */}
+          <div className="flex gap-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" className="flex-1" disabled={loading}>
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+              ) : (
+                "Guardar cambios"
+              )}
+            </Button>
+          </div>
         </form>
       </main>
+
+      <Footer />
     </div>
   );
 }

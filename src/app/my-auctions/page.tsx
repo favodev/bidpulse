@@ -1,0 +1,369 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Plus,
+  Loader2,
+  Gavel,
+  Clock,
+  CheckCircle,
+  XCircle,
+  MoreVertical,
+  Eye,
+  Edit,
+  Trash2,
+} from "lucide-react";
+import { Navbar } from "@/components/layout";
+import { Footer } from "@/components/layout";
+import { Button } from "@/components/ui";
+import { useAuth } from "@/hooks/useAuth";
+import { getAuctions, deleteAuction } from "@/services/auction.service";
+import { Auction } from "@/types/auction.types";
+import { Timestamp } from "firebase/firestore";
+
+type TabType = "active" | "ended" | "all";
+
+const formatPrice = (price: number) => {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "USD",
+  }).format(price);
+};
+
+function formatTimeRemaining(endTime: Timestamp): string {
+  const now = new Date();
+  const end = endTime.toDate();
+  const diff = end.getTime() - now.getTime();
+
+  if (diff <= 0) return "Finalizada";
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+function AuctionRow({
+  auction,
+  onDelete,
+}: {
+  auction: Auction;
+  onDelete: (id: string) => void;
+}) {
+  const [showMenu, setShowMenu] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const isEnded = auction.status === "ended" || auction.endTime.toDate() < new Date();
+  const timeLeft = formatTimeRemaining(auction.endTime);
+
+  const handleDelete = async () => {
+    if (!confirm("¿Estás seguro de eliminar esta subasta?")) return;
+    setDeleting(true);
+    try {
+      await deleteAuction(auction.id);
+      onDelete(auction.id);
+    } catch (err) {
+      console.error("Error deleting auction:", err);
+      alert("Error al eliminar la subasta");
+    } finally {
+      setDeleting(false);
+      setShowMenu(false);
+    }
+  };
+
+  return (
+    <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 hover:border-slate-700 transition-colors">
+      <div className="flex gap-4">
+        {/* Imagen */}
+        <div className="w-20 h-20 shrink-0 rounded-lg overflow-hidden bg-slate-800">
+          {auction.images?.[0] ? (
+            <img
+              src={auction.images[0]}
+              alt={auction.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Gavel className="w-8 h-8 text-slate-600" />
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="font-semibold text-white truncate">{auction.title}</h3>
+              <p className="text-slate-500 text-sm truncate">{auction.description}</p>
+            </div>
+
+            {/* Menu de acciones */}
+            <div className="relative">
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+
+              {showMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-1 w-40 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-20 py-1">
+                    <Link
+                      href={`/auction/${auction.id}`}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Ver subasta
+                    </Link>
+                    {!isEnded && (
+                      <Link
+                        href={`/auction/${auction.id}/edit`}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Editar
+                      </Link>
+                    )}
+                    <button
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-slate-700 transition-colors disabled:opacity-50"
+                    >
+                      {deleting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                      Eliminar
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="flex items-center gap-4 mt-3 text-sm">
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500">Puja actual:</span>
+              <span className="text-emerald-400 font-semibold">
+                {formatPrice(auction.currentBid)}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Gavel className="w-4 h-4 text-slate-500" />
+              <span className="text-slate-400">{auction.bidsCount} pujas</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-slate-500" />
+              <span className={isEnded ? "text-slate-500" : "text-slate-400"}>
+                {timeLeft}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Estado */}
+        <div className="shrink-0">
+          {isEnded ? (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-800 text-slate-400 text-xs rounded-full">
+              <CheckCircle className="w-3 h-3" />
+              Finalizada
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">
+              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+              Activa
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function MyAuctionsPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>("all");
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login");
+    }
+  }, [user, authLoading, router]);
+
+  useEffect(() => {
+    async function loadAuctions() {
+      if (!user) return;
+
+      try {
+        const data = await getAuctions({
+          sellerId: user.uid,
+          sortBy: "createdAt",
+          sortOrder: "desc",
+        });
+        setAuctions(data);
+      } catch (err) {
+        console.error("Error loading auctions:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (user) {
+      loadAuctions();
+    }
+  }, [user]);
+
+  const handleDelete = (id: string) => {
+    setAuctions((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const filteredAuctions = auctions.filter((auction) => {
+    const isEnded = auction.status === "ended" || auction.endTime.toDate() < new Date();
+    if (activeTab === "active") return !isEnded;
+    if (activeTab === "ended") return isEnded;
+    return true;
+  });
+
+  const activeCount = auctions.filter(
+    (a) => a.status !== "ended" && a.endTime.toDate() >= new Date()
+  ).length;
+  const endedCount = auctions.length - activeCount;
+
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-slate-950">
+        <Navbar />
+        <div className="flex items-center justify-center h-[calc(100vh-80px)]">
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col">
+      <Navbar />
+
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Mis Subastas</h1>
+            <p className="text-slate-500 mt-1">
+              Gestiona las subastas que has creado
+            </p>
+          </div>
+          <Link href="/auction/create">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Subasta
+            </Button>
+          </Link>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "all"
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-800 text-slate-400 hover:text-white"
+            }`}
+          >
+            Todas ({auctions.length})
+          </button>
+          <button
+            onClick={() => setActiveTab("active")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "active"
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-800 text-slate-400 hover:text-white"
+            }`}
+          >
+            Activas ({activeCount})
+          </button>
+          <button
+            onClick={() => setActiveTab("ended")}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === "ended"
+                ? "bg-emerald-600 text-white"
+                : "bg-slate-800 text-slate-400 hover:text-white"
+            }`}
+          >
+            Finalizadas ({endedCount})
+          </button>
+        </div>
+
+        {/* Lista de subastas */}
+        {filteredAuctions.length === 0 ? (
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
+            {activeTab === "all" ? (
+              <>
+                <Gavel className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  No tienes subastas
+                </h3>
+                <p className="text-slate-500 mb-6">
+                  Crea tu primera subasta y comienza a vender
+                </p>
+                <Link href="/auction/create">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Crear mi primera subasta
+                  </Button>
+                </Link>
+              </>
+            ) : activeTab === "active" ? (
+              <>
+                <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  No tienes subastas activas
+                </h3>
+                <p className="text-slate-500">
+                  Todas tus subastas han finalizado o aún no has creado ninguna
+                </p>
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">
+                  No tienes subastas finalizadas
+                </h3>
+                <p className="text-slate-500">
+                  Tus subastas activas aparecerán aquí cuando terminen
+                </p>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredAuctions.map((auction) => (
+              <AuctionRow
+                key={auction.id}
+                auction={auction}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        )}
+      </main>
+
+      <Footer />
+    </div>
+  );
+}
