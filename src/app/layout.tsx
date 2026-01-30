@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BidPulse | Subastas en Tiempo Real",
+  title: "BidPulse",
   description: "Subastas en tiempo real de alto rendimiento con BidPulse. Puja, compite y gana.",
   keywords: ["subastas", "tiempo real", "pujas", "subastas online"],
 };

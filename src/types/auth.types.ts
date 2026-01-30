@@ -45,6 +45,7 @@ export interface AuthResult<T = User> {
 
 export interface AuthContextValue {
   user: User | null;
+  userAvatar: string | null;
   loading: boolean;
   error: AuthError | null;
   login: (credentials: LoginCredentials) => Promise<AuthResult>;
@@ -53,4 +54,5 @@ export interface AuthContextValue {
   logout: () => Promise<AuthResult<void>>;
   resetPassword: (email: string) => Promise<AuthResult<void>>;
   clearError: () => void;
+  refreshUser: () => void;
 }

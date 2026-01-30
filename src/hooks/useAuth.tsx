@@ -12,6 +12,7 @@ import {
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { AuthService } from "@/services/auth.service";
+import { getUserProfile } from "@/services/user.service";
 import {
   AuthContextValue,
   AuthError,
@@ -28,17 +29,34 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
+
+  // Cargar avatar del usuario desde Firestore
+  const loadUserAvatar = useCallback(async (userId: string) => {
+    try {
+      const profile = await getUserProfile(userId);
+      setUserAvatar(profile?.avatar || null);
+    } catch (err) {
+      console.error("Error loading user avatar:", err);
+      setUserAvatar(null);
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
+      if (firebaseUser) {
+        loadUserAvatar(firebaseUser.uid);
+      } else {
+        setUserAvatar(null);
+      }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [loadUserAvatar]);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -121,9 +139,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     []
   );
 
+  const refreshUser = useCallback(() => {
+    if (auth.currentUser) {
+      auth.currentUser.reload().then(() => {
+        setUser({ ...auth.currentUser } as User);
+        loadUserAvatar(auth.currentUser!.uid);
+      });
+    }
+  }, [loadUserAvatar]);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      userAvatar,
       loading,
       error,
       login,
@@ -132,8 +160,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       logout,
       resetPassword,
       clearError,
+      refreshUser,
     }),
-    [user, loading, error, login, signup, loginWithGoogle, logout, resetPassword, clearError]
+    [user, userAvatar, loading, error, login, signup, loginWithGoogle, logout, resetPassword, clearError, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

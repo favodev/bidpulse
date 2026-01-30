@@ -71,6 +71,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           font-semibold
           rounded-lg
           transition-all duration-200
+          cursor-pointer
           disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100
           ${variantStyles[variant]}
           ${sizeStyles[size]}
