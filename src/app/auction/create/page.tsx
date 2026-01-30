@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { Navbar } from "@/components/layout";
@@ -9,11 +9,38 @@ import { useAuth } from "@/hooks/useAuth";
 import { createAuction } from "@/services/auction.service";
 import { AuctionCategory, CATEGORY_LABELS } from "@/types/auction.types";
 
+// Comprimir imagen a Base64
+async function compressImage(file: File, maxWidth: number = 800): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ratio = Math.min(maxWidth / img.width, 1);
+      canvas.width = img.width * ratio;
+      canvas.height = img.height * ratio;
+      
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("No se pudo crear el contexto del canvas"));
+        return;
+      }
+      
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL("image/jpeg", 0.7);
+      resolve(base64);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export default function CreateAuctionPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, userAvatar } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -28,29 +55,54 @@ export default function CreateAuctionPage() {
     images: [] as string[],
   });
 
-  // Imágenes de ejemplo para pruebas
-  const sampleImages = [
-    "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800",
-    "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800",
-    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800",
-  ];
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const addSampleImage = (url: string) => {
-    if (!formData.images.includes(url)) {
-      setFormData({ ...formData, images: [...formData.images, url] });
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploadingImages(true);
+    setError("");
+
+    try {
+      const newImages: string[] = [];
+      
+      for (let i = 0; i < Math.min(files.length, 5 - formData.images.length); i++) {
+        const file = files[i];
+        
+        if (!file.type.startsWith("image/")) continue;
+        if (file.size > 10 * 1024 * 1024) {
+          setError("Las imágenes no pueden pesar más de 10MB");
+          continue;
+        }
+        
+        const base64 = await compressImage(file, 800);
+        newImages.push(base64);
+      }
+      
+      setFormData({
+        ...formData,
+        images: [...formData.images, ...newImages],
+      });
+    } catch (err) {
+      console.error(err);
+      setError("Error al procesar las imágenes");
+    } finally {
+      setUploadingImages(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
-  const removeImage = (url: string) => {
+  const removeImage = (index: number) => {
     setFormData({
       ...formData,
-      images: formData.images.filter((img) => img !== url),
+      images: formData.images.filter((_, i) => i !== index),
     });
   };
 
@@ -69,6 +121,11 @@ export default function CreateAuctionPage() {
       return;
     }
 
+    if (formData.images.length === 0) {
+      setError("Debes agregar al menos una imagen");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -80,7 +137,7 @@ export default function CreateAuctionPage() {
           title: formData.title,
           description: formData.description,
           category: formData.category,
-          images: formData.images.length > 0 ? formData.images : sampleImages.slice(0, 1),
+          images: formData.images,
           startingPrice: parseFloat(formData.startingPrice),
           reservePrice: formData.reservePrice ? parseFloat(formData.reservePrice) : undefined,
           bidIncrement: parseFloat(formData.bidIncrement),
@@ -88,7 +145,8 @@ export default function CreateAuctionPage() {
           endTime: endDate,
         },
         user.uid,
-        user.displayName || "Vendedor"
+        user.displayName || "Vendedor",
+        userAvatar || undefined
       );
 
       setSuccess("¡Subasta creada exitosamente!");
@@ -228,19 +286,19 @@ export default function CreateAuctionPage() {
           {/* Imágenes */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Imágenes
+              Imágenes (máximo 5)
             </label>
 
             {/* Imágenes seleccionadas */}
             {formData.images.length > 0 && (
               <div className="flex gap-2 flex-wrap mb-4">
-                {formData.images.map((img) => (
-                  <div key={img} className="relative w-20 h-20 rounded-lg overflow-hidden">
+                {formData.images.map((img, index) => (
+                  <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden">
                     <img src={img} alt="" className="w-full h-full object-cover" />
                     <button
                       type="button"
-                      onClick={() => removeImage(img)}
-                      className="absolute top-1 right-1 bg-black/50 rounded-full p-1"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-1 right-1 bg-black/50 rounded-full p-1 cursor-pointer"
                     >
                       <X className="w-3 h-3 text-white" />
                     </button>
@@ -249,26 +307,38 @@ export default function CreateAuctionPage() {
               </div>
             )}
 
-            {/* Imágenes de ejemplo */}
-            <p className="text-gray-500 text-sm mb-2">
-              Selecciona imágenes de ejemplo:
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {sampleImages.map((img) => (
-                <button
-                  key={img}
-                  type="button"
-                  onClick={() => addSampleImage(img)}
-                  className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 ${
-                    formData.images.includes(img)
-                      ? "border-emerald-500"
-                      : "border-transparent opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
+            {/* Botón para subir imágenes */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            
+            {formData.images.length < 5 && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImages}
+                className="w-full border-2 border-dashed border-slate-700 rounded-lg p-6 text-center hover:border-emerald-500 transition-colors cursor-pointer"
+              >
+                {uploadingImages ? (
+                  <Loader2 className="w-6 h-6 text-emerald-500 animate-spin mx-auto" />
+                ) : (
+                  <>
+                    <ImagePlus className="w-8 h-8 text-gray-500 mx-auto mb-2" />
+                    <p className="text-gray-400 text-sm">
+                      Clic para subir imágenes
+                    </p>
+                    <p className="text-gray-600 text-xs mt-1">
+                      JPG, PNG hasta 10MB
+                    </p>
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Botón submit */}

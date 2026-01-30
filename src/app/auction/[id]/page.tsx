@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Clock, Users, ArrowLeft, Heart, Share2, Shield } from "lucide-react";
-import Image from "next/image";
 import { Auction } from "@/types/auction.types";
 import { Bid } from "@/types/bid.types";
 import {
@@ -116,11 +115,10 @@ export default function AuctionDetailPage() {
           <div className="space-y-4">
             <div className="relative aspect-square bg-slate-900 rounded-2xl overflow-hidden">
               {auction.images && auction.images.length > 0 ? (
-                <Image
+                <img
                   src={auction.images[selectedImage]}
                   alt={auction.title}
-                  fill
-                  className="object-cover"
+                  className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-500">
@@ -155,7 +153,7 @@ export default function AuctionDetailPage() {
                         : "opacity-60 hover:opacity-100"
                     }`}
                   >
-                    <Image src={img} alt="" fill className="object-cover" />
+                    <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

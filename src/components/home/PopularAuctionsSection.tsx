@@ -1,87 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Heart, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, Loader2, ArrowRight } from "lucide-react";
+import { getPopularAuctions } from "@/services/auction.service";
+import { Auction } from "@/types/auction.types";
+import { Timestamp } from "firebase/firestore";
 
 const formatPrice = (price: number) => {
-  return new Intl.NumberFormat("en-US").format(price);
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "USD",
+  }).format(price);
 };
 
-// Datos de ejemplo por ahora :v
-const popularAuctions = [
-  {
-    id: "1",
-    title: "Abstract #42 - Limited Edition",
-    seller: "Sarah Jenkins",
-    image: "/assets/placeholder-art.jpg",
-    currentBid: 2450,
-    bidsCount: 24,
-    endsIn: "2h 14m",
-  },
-  {
-    id: "2",
-    title: "Leica M6 TTL Black Paint",
-    seller: "Mint Condition - Original Box",
-    image: "/assets/placeholder-camera.jpg",
-    currentBid: 3800,
-    bidsCount: 18,
-    endsIn: "5h 30m",
-  },
-  {
-    id: "3",
-    title: "Custom Mechanical Keyboard",
-    seller: "GMK Keycaps - Brass Plate",
-    image: "/assets/placeholder-keyboard.jpg",
-    currentBid: 450,
-    bidsCount: 32,
-    endsIn: "45m",
-  },
-  {
-    id: "4",
-    title: "Amazing Fantasy #15",
-    seller: "CGC 4.0 - First Appearance Spiderman",
-    image: "/assets/placeholder-comic.jpg",
-    currentBid: 15200,
-    bidsCount: 12,
-    endsIn: "3d 12h",
-  },
-];
+function formatTimeRemaining(endTime: Timestamp): string {
+  const now = new Date();
+  const end = endTime.toDate();
+  const diff = end.getTime() - now.getTime();
 
-interface AuctionCardProps {
-  id: string;
-  title: string;
-  seller: string;
-  image: string;
-  currentBid: number;
-  bidsCount: number;
-  endsIn: string;
+  if (diff <= 0) return "Finalizada";
+
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
 }
 
-function PopularAuctionCard({
-  id,
-  title,
-  seller,
-  currentBid,
-  bidsCount,
-  endsIn,
-}: AuctionCardProps) {
+function PopularAuctionCard({ auction }: { auction: Auction }) {
   const [isLiked, setIsLiked] = useState(false);
+  const timeLeft = formatTimeRemaining(auction.endTime);
 
   return (
     <Link
-      href={`/auction/${id}`}
-      className="group bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden hover:border-slate-700 transition-all hover:scale-[1.02]"
+      href={`/auction/${auction.id}`}
+      className="group bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden hover:border-emerald-500/50 transition-all hover:scale-[1.02]"
     >
       {/* Imagen */}
       <div className="relative aspect-square bg-slate-800">
-        <div className="w-full h-full bg-linear-to-br from-slate-700 to-slate-800 flex items-center justify-center text-slate-500">
-          Imagen
-        </div>
+        {auction.images?.[0] ? (
+          <img
+            src={auction.images[0]}
+            alt={auction.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-linear-to-br from-slate-700 to-slate-800 flex items-center justify-center text-slate-500">
+            Sin imagen
+          </div>
+        )}
 
         {/* Badge de pujas */}
-        <div className="absolute bottom-3 left-3 bg-blue-600 text-white text-xs font-semibold px-2.5 py-1 rounded-md">
-          {bidsCount} Pujas
+        <div className="absolute bottom-3 left-3 bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-md">
+          {auction.bidsCount} Pujas
         </div>
 
         {/* Botón favorito */}
@@ -98,19 +72,19 @@ function PopularAuctionCard({
 
       {/* Info */}
       <div className="p-4">
-        <h3 className="font-semibold text-white truncate group-hover:text-blue-400 transition-colors">
-          {title}
+        <h3 className="font-semibold text-white truncate group-hover:text-emerald-400 transition-colors">
+          {auction.title}
         </h3>
-        <p className="text-slate-500 text-sm truncate mb-3">{seller}</p>
+        <p className="text-slate-500 text-sm truncate mb-3">{auction.sellerName}</p>
 
         <div className="flex items-center justify-between">
           <div>
             <p className="text-slate-500 text-xs">Puja Actual</p>
-            <p className="text-white font-bold">${formatPrice(currentBid)}</p>
+            <p className="text-white font-bold">{formatPrice(auction.currentBid)}</p>
           </div>
           <div className="text-right">
             <p className="text-slate-500 text-xs">Termina en</p>
-            <p className="text-blue-400 font-medium">{endsIn}</p>
+            <p className="text-emerald-400 font-medium">{timeLeft}</p>
           </div>
         </div>
       </div>
@@ -119,16 +93,32 @@ function PopularAuctionCard({
 }
 
 export function PopularAuctionsSection() {
-  const [scrollIndex, setScrollIndex] = useState(0);
-  const maxIndex = Math.max(0, popularAuctions.length - 4);
+  const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handlePrev = () => {
-    setScrollIndex((prev) => Math.max(0, prev - 1));
-  };
+  useEffect(() => {
+    async function loadAuctions() {
+      try {
+        const data = await getPopularAuctions(8);
+        setAuctions(data);
+      } catch (err) {
+        console.error("Error loading popular auctions:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAuctions();
+  }, []);
 
-  const handleNext = () => {
-    setScrollIndex((prev) => Math.min(maxIndex, prev + 1));
-  };
+  if (loading) {
+    return (
+      <section className="py-12 px-4 bg-slate-950">
+        <div className="max-w-7xl mx-auto flex justify-center">
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-12 px-4 bg-slate-950">
@@ -142,31 +132,35 @@ export function PopularAuctionsSection() {
             </p>
           </div>
 
-          {/* Controles del carrusel */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrev}
-              disabled={scrollIndex === 0}
-              className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleNext}
-              disabled={scrollIndex >= maxIndex}
-              className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
+          <Link
+            href="/auctions?sort=bidsCount-desc"
+            className="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1"
+          >
+            Ver todas
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
 
-        {/* Grid de subastas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {popularAuctions.map((auction) => (
-            <PopularAuctionCard key={auction.id} {...auction} />
-          ))}
-        </div>
+        {/* Grid de subastas o mensaje vacío */}
+        {auctions.length === 0 ? (
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-12 text-center">
+            <Heart className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+            <p className="text-slate-400">Aún no hay subastas populares</p>
+            <p className="text-slate-500 text-sm mt-1">Sé el primero en crear una subasta y atraer pujas</p>
+            <Link
+              href="/auction/create"
+              className="inline-block mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm"
+            >
+              Crear subasta
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {auctions.map((auction) => (
+              <PopularAuctionCard key={auction.id} auction={auction} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

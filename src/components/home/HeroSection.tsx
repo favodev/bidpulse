@@ -32,12 +32,12 @@ export function HeroSection() {
       <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-slate-900 to-slate-950">
         {/* Efecto de líneas decorativas */}
         <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-1/4 left-0 w-full h-px bg-linear-to-r from-transparent via-blue-500 to-transparent" />
-          <div className="absolute top-1/3 left-0 w-full h-px bg-linear-to-r from-transparent via-blue-400/50 to-transparent" />
-          <div className="absolute top-1/2 left-0 w-full h-px bg-linear-to-r from-transparent via-blue-600/30 to-transparent" />
+          <div className="absolute top-1/4 left-0 w-full h-px bg-linear-to-r from-transparent via-emerald-500 to-transparent" />
+          <div className="absolute top-1/3 left-0 w-full h-px bg-linear-to-r from-transparent via-emerald-400/50 to-transparent" />
+          <div className="absolute top-1/2 left-0 w-full h-px bg-linear-to-r from-transparent via-emerald-600/30 to-transparent" />
         </div>
         {/* Efecto de brillo */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-200 h-100 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-200 h-100 bg-emerald-500/10 rounded-full blur-3xl" />
       </div>
 
       {/* Contenido */}
@@ -45,7 +45,7 @@ export function HeroSection() {
         {/* Título principal */}
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4">
           Experimenta la Emoción de la
-          <span className="block text-transparent bg-clip-text bg-linear-to-r from-blue-400 to-blue-600 mt-2">
+          <span className="block text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-emerald-600 mt-2">
             Puja en Vivo
           </span>
         </h1>
@@ -66,11 +66,11 @@ export function HeroSection() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar relojes, arte, electrónica..."
-              className="w-full pl-12 pr-28 py-4 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full pl-12 pr-28 py-4 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
             />
             <button
               type="submit"
-              className="absolute right-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+              className="absolute right-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors"
             >
               Buscar
             </button>

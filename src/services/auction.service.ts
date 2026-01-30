@@ -140,7 +140,8 @@ export async function getPopularAuctions(limitCount = 10): Promise<Auction[]> {
 export async function createAuction(
   data: CreateAuctionData,
   sellerId: string,
-  sellerName: string
+  sellerName: string,
+  sellerAvatar?: string
 ): Promise<string> {
   try {
     const now = serverTimestamp();
@@ -149,6 +150,7 @@ export async function createAuction(
       ...data,
       sellerId,
       sellerName,
+      sellerAvatar: sellerAvatar || "",
       currentBid: data.startingPrice,
       bidsCount: 0,
       watchersCount: 0,
