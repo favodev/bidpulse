@@ -4,12 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Plus,
   Loader2,
   Gavel,
   Clock,
   CheckCircle,
-  XCircle,
   MoreVertical,
   Eye,
   Edit,
@@ -26,10 +24,11 @@ import { Timestamp } from "firebase/firestore";
 type TabType = "active" | "ended" | "all";
 
 const formatPrice = (price: number) => {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "USD",
+  const formatted = new Intl.NumberFormat("es-CL", {
+    style: "decimal",
+    maximumFractionDigits: 0,
   }).format(price);
+  return `$${formatted} CLP`;
 };
 
 function formatTimeRemaining(endTime: Timestamp): string {
@@ -258,21 +257,13 @@ export default function MyAuctionsPage() {
     <div className="min-h-screen bg-slate-950 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 pt-24">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Mis Subastas</h1>
-            <p className="text-slate-500 mt-1">
-              Gestiona las subastas que has creado
-            </p>
-          </div>
-          <Link href="/auction/create">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Subasta
-            </Button>
-          </Link>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-white">Mis Subastas</h1>
+          <p className="text-slate-500 mt-1">
+            Gestiona las subastas que has creado
+          </p>
         </div>
 
         {/* Tabs */}
@@ -323,7 +314,6 @@ export default function MyAuctionsPage() {
                 </p>
                 <Link href="/auction/create">
                   <Button>
-                    <Plus className="w-4 h-4 mr-2" />
                     Crear mi primera subasta
                   </Button>
                 </Link>

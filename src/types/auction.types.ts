@@ -3,23 +3,41 @@ import { Timestamp } from "firebase/firestore";
 export type AuctionStatus = "draft" | "scheduled" | "active" | "ended" | "cancelled";
 
 export type AuctionCategory =
-  | "watches"
-  | "vehicles"
-  | "art"
   | "electronics"
-  | "collectibles"
-  | "jewelry"
+  | "vehicles"
   | "fashion"
+  | "home"
+  | "sports"
+  | "toys"
+  | "books"
+  | "music"
+  | "art"
+  | "antiques"
+  | "jewelry"
+  | "tools"
+  | "garden"
+  | "pets"
+  | "baby"
+  | "health"
   | "other";
 
 export const CATEGORY_LABELS: Record<AuctionCategory, string> = {
-  watches: "Relojes",
-  vehicles: "Vehículos",
-  art: "Arte & Diseño",
-  electronics: "Electrónica",
-  collectibles: "Coleccionables",
-  jewelry: "Joyería",
-  fashion: "Moda",
+  electronics: "Electrónica y Tecnología",
+  vehicles: "Vehículos y Accesorios",
+  fashion: "Ropa, Zapatos y Accesorios",
+  home: "Hogar y Decoración",
+  sports: "Deportes y Fitness",
+  toys: "Juguetes y Hobbies",
+  books: "Libros, Películas y Música",
+  music: "Instrumentos Musicales",
+  art: "Arte y Antigüedades",
+  antiques: "Coleccionables y Memorabilia",
+  jewelry: "Joyería y Relojes",
+  tools: "Herramientas y Bricolaje",
+  garden: "Jardín y Exterior",
+  pets: "Mascotas y Accesorios",
+  baby: "Bebés y Niños",
+  health: "Salud y Belleza",
   other: "Otros",
 };
 

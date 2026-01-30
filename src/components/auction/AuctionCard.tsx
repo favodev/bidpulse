@@ -29,10 +29,11 @@ function formatTimeRemaining(endTime: Timestamp): string {
 
 // Función para formatear precio
 function formatPrice(price: number): string {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "USD",
+  const formatted = new Intl.NumberFormat("es-CL", {
+    style: "decimal",
+    maximumFractionDigits: 0,
   }).format(price);
+  return `$${formatted} CLP`;
 }
 
 export function AuctionCard({ auction, compact = false }: AuctionCardProps) {

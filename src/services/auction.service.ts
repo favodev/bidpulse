@@ -146,8 +146,13 @@ export async function createAuction(
   try {
     const now = serverTimestamp();
 
-    const auctionData = {
-      ...data,
+    const auctionData: Record<string, unknown> = {
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      images: data.images,
+      startingPrice: data.startingPrice,
+      bidIncrement: data.bidIncrement,
       sellerId,
       sellerName,
       sellerAvatar: sellerAvatar || "",
@@ -160,6 +165,11 @@ export async function createAuction(
       createdAt: now,
       updatedAt: now,
     };
+
+    // Solo agregar reservePrice si tiene valor
+    if (data.reservePrice !== undefined && data.reservePrice !== null) {
+      auctionData.reservePrice = data.reservePrice;
+    }
 
     const docRef = await addDoc(auctionsRef, auctionData);
     return docRef.id;

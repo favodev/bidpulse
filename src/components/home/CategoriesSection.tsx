@@ -3,10 +3,10 @@ import { Button } from "@/components/ui";
 
 const categories = [
   {
-    id: "watches",
-    name: "Relojes",
-    slug: "watches",
-    gradient: "from-amber-900/80 to-amber-950/80",
+    id: "electronics",
+    name: "Electrónica",
+    slug: "electronics",
+    gradient: "from-blue-900/80 to-blue-950/80",
   },
   {
     id: "vehicles",
@@ -15,16 +15,40 @@ const categories = [
     gradient: "from-sky-900/80 to-sky-950/80",
   },
   {
-    id: "art",
-    name: "Arte & Diseño",
-    slug: "art",
-    gradient: "from-stone-700/80 to-stone-900/80",
+    id: "fashion",
+    name: "Moda",
+    slug: "fashion",
+    gradient: "from-pink-900/80 to-pink-950/80",
   },
   {
-    id: "electronics",
-    name: "Electrónica",
-    slug: "electronics",
-    gradient: "from-emerald-900/80 to-emerald-950/80",
+    id: "jewelry",
+    name: "Joyería y Relojes",
+    slug: "jewelry",
+    gradient: "from-amber-900/80 to-amber-950/80",
+  },
+  {
+    id: "home",
+    name: "Hogar",
+    slug: "home",
+    gradient: "from-orange-900/80 to-orange-950/80",
+  },
+  {
+    id: "sports",
+    name: "Deportes",
+    slug: "sports",
+    gradient: "from-green-900/80 to-green-950/80",
+  },
+  {
+    id: "art",
+    name: "Arte y Antigüedades",
+    slug: "art",
+    gradient: "from-purple-900/80 to-purple-950/80",
+  },
+  {
+    id: "toys",
+    name: "Juguetes y Hobbies",
+    slug: "toys",
+    gradient: "from-red-900/80 to-red-950/80",
   },
 ];
 

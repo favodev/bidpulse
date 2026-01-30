@@ -268,9 +268,9 @@ export function calculateMinBid(currentBid: number): number {
 }
 
 export function formatBidAmount(amount: number): string {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
+  const formatted = new Intl.NumberFormat("es-CL", {
+    style: "decimal",
+    maximumFractionDigits: 0,
   }).format(amount);
+  return `$${formatted} CLP`;
 }

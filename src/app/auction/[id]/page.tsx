@@ -129,10 +129,10 @@ export default function AuctionDetailPage() {
               {/* Badge estado */}
               {auction.status === "active" && (
                 <div
-                  className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-medium ${
+                  className={`absolute top-4 left-4 px-3 py-1 rounded-full text-xs font-semibold shadow-lg ${
                     isEnding
-                      ? "bg-red-500/20 text-red-400"
-                      : "bg-emerald-500/20 text-emerald-400"
+                      ? "bg-red-600 text-white"
+                      : "bg-emerald-600 text-white"
                   }`}
                 >
                   {isEnding ? "¡Termina pronto!" : "En vivo"}

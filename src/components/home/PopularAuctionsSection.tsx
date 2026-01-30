@@ -8,10 +8,11 @@ import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
 
 const formatPrice = (price: number) => {
-  return new Intl.NumberFormat("es-MX", {
-    style: "currency",
-    currency: "USD",
+  const formatted = new Intl.NumberFormat("es-CL", {
+    style: "decimal",
+    maximumFractionDigits: 0,
   }).format(price);
+  return `$${formatted} CLP`;
 };
 
 function formatTimeRemaining(endTime: Timestamp): string {

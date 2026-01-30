@@ -59,7 +59,7 @@ export async function createUserProfile(
         pushNotifications: true,
         outbidAlerts: true,
         endingSoonAlerts: true,
-        currency: "USD",
+        currency: "CLP",
         language: "es",
       },
       createdAt: serverTimestamp(),
