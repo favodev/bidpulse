@@ -152,7 +152,7 @@ export async function createAuction(
       currentBid: data.startingPrice,
       bidsCount: 0,
       watchersCount: 0,
-      status: "scheduled" as AuctionStatus,
+      status: "active" as AuctionStatus,
       startTime: Timestamp.fromDate(data.startTime),
       endTime: Timestamp.fromDate(data.endTime),
       createdAt: now,
