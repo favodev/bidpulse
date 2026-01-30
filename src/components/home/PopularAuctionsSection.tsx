@@ -134,7 +134,7 @@ export function PopularAuctionsSection() {
           </div>
 
           <Link
-            href="/auctions?sort=bidsCount-desc"
+            href="/search"
             className="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1"
           >
             Ver todas

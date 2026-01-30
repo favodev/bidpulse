@@ -5,10 +5,11 @@ import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const trendingTags = [
-  "Vintage Rolex",
-  "Banksy Art",
-  "Classic Cars",
-  "Electrónica",
+  "iPhone",
+  "PlayStation",
+  "Relojes",
+  "Zapatillas",
+  "Vinilos",
 ];
 
 export function HeroSection() {

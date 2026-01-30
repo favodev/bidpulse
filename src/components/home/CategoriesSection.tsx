@@ -61,7 +61,7 @@ interface CategoryCardProps {
 function CategoryCard({ name, slug, gradient }: CategoryCardProps) {
   return (
     <Link
-      href={`/auctions?category=${slug}`}
+      href={`/search?category=${slug}`}
       className="group relative aspect-4/5 rounded-xl overflow-hidden"
     >
       {/* Fondo placeholder */}
@@ -110,7 +110,7 @@ export function CategoriesSection() {
 
         {/* Botón ver todas */}
         <div className="flex justify-center">
-          <Link href="/auctions">
+          <Link href="/search">
             <Button variant="outline" size="md">
               Ver Todas las Subastas
             </Button>

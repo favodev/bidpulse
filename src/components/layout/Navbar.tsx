@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Search, User, Menu, X, LogOut, Settings, UserPlus, Gavel } from "lucide-react";
+import { User, Menu, X, LogOut, Settings, UserPlus, Gavel } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui";
 
 const navLinks = [
-  { href: "/auctions", label: "Subastas" },
+  { href: "/search", label: "Explorar" },
 ];
 
 export function Navbar() {
@@ -69,10 +69,6 @@ export function Navbar() {
                 Vender Artículo
               </Button>
             </Link>
-
-            <button className="p-2 text-slate-400 hover:text-white transition-colors cursor-pointer">
-              <Search className="w-5 h-5" />
-            </button>
 
             {user ? (
               <div className="relative" ref={userMenuRef}>

@@ -1,0 +1,508 @@
+"use client";
+
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import {
+  Search,
+  SlidersHorizontal,
+  X,
+  Gavel,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
+import { Navbar } from "@/components/layout";
+import { Footer } from "@/components/layout";
+import { Button } from "@/components/ui";
+import { AuctionCard } from "@/components/auction";
+import { getAuctions } from "@/services/auction.service";
+import {
+  Auction,
+  AuctionCategory,
+  AuctionStatus,
+  CATEGORY_LABELS,
+} from "@/types/auction.types";
+
+// Opciones de ordenamiento
+const SORT_OPTIONS = [
+  { value: "endTime-asc", label: "Terminan pronto" },
+  { value: "endTime-desc", label: "Terminan último" },
+  { value: "currentBid-asc", label: "Precio: menor a mayor" },
+  { value: "currentBid-desc", label: "Precio: mayor a menor" },
+  { value: "bidsCount-desc", label: "Más populares" },
+  { value: "createdAt-desc", label: "Más recientes" },
+];
+
+// Rangos de precio en CLP
+const PRICE_RANGES = [
+  { value: "all", label: "Cualquier precio", min: 0, max: Infinity },
+  { value: "0-10000", label: "Hasta $10.000", min: 0, max: 10000 },
+  { value: "10000-50000", label: "$10.000 - $50.000", min: 10000, max: 50000 },
+  { value: "50000-100000", label: "$50.000 - $100.000", min: 50000, max: 100000 },
+  { value: "100000-500000", label: "$100.000 - $500.000", min: 100000, max: 500000 },
+  { value: "500000+", label: "Más de $500.000", min: 500000, max: Infinity },
+];
+
+export default function SearchPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
+  const initialCategory = searchParams.get("category") as AuctionCategory | null;
+
+  const [auctions, setAuctions] = useState<Auction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Estados de búsqueda y filtros 
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  const [selectedCategory, setSelectedCategory] = useState<AuctionCategory | "all">(
+    initialCategory && CATEGORY_LABELS[initialCategory] ? initialCategory : "all"
+  );
+  const [selectedStatus, setSelectedStatus] = useState<AuctionStatus | "all">("active");
+  const [priceRange, setPriceRange] = useState("all");
+  const [sortBy, setSortBy] = useState("endTime-asc");
+  
+  // UI states
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [expandedSections, setExpandedSections] = useState({
+    category: true,
+    status: true,
+    price: true,
+  });
+
+  // Cargar todas las subastas
+  useEffect(() => {
+    async function loadAuctions() {
+      setLoading(true);
+      try {
+        const [sortField, sortOrder] = sortBy.split("-") as [string, "asc" | "desc"];
+        
+        const data = await getAuctions({
+          status: selectedStatus !== "all" ? selectedStatus : undefined,
+          sortBy: sortField as "endTime" | "currentBid" | "bidsCount" | "createdAt",
+          sortOrder,
+          limit: 100,
+        });
+        setAuctions(data);
+      } catch (err) {
+        console.error("Error loading auctions:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadAuctions();
+  }, [selectedStatus, sortBy]);
+
+  // Filtrar resultados
+  const filteredAuctions = useMemo(() => {
+    let results = auctions;
+
+    // Filtrar por búsqueda de texto
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(
+        (auction) =>
+          auction.title.toLowerCase().includes(query) ||
+          auction.description?.toLowerCase().includes(query) ||
+          CATEGORY_LABELS[auction.category].toLowerCase().includes(query)
+      );
+    }
+
+    // Filtrar por categoría
+    if (selectedCategory !== "all") {
+      results = results.filter((auction) => auction.category === selectedCategory);
+    }
+
+    // Filtrar por rango de precio
+    if (priceRange !== "all") {
+      const range = PRICE_RANGES.find((r) => r.value === priceRange);
+      if (range) {
+        results = results.filter(
+          (auction) =>
+            auction.currentBid >= range.min && auction.currentBid <= range.max
+        );
+      }
+    }
+
+    return results;
+  }, [auctions, searchQuery, selectedCategory, priceRange]);
+
+  // Limpiar todos los filtros
+  const clearAllFilters = () => {
+    setSearchQuery("");
+    setSelectedCategory("all");
+    setSelectedStatus("active");
+    setPriceRange("all");
+    setSortBy("endTime-asc");
+    router.push("/search");
+  };
+
+  // Contar filtros activos
+  const activeFiltersCount = [
+    selectedCategory !== "all",
+    selectedStatus !== "active",
+    priceRange !== "all",
+  ].filter(Boolean).length;
+
+  // Toggle secciones de filtro
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  // Componente de filtros (reutilizable para desktop y mobile)
+  const FiltersContent = () => (
+    <div className="space-y-6">
+      {/* Categorías */}
+      <div>
+        <button
+          onClick={() => toggleSection("category")}
+          className="flex items-center justify-between w-full text-left mb-3"
+        >
+          <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
+            Categoría
+          </h3>
+          {expandedSections.category ? (
+            <ChevronUp className="w-4 h-4 text-slate-400" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          )}
+        </button>
+        {expandedSections.category && (
+          <div className="space-y-1 max-h-64 overflow-y-auto">
+            <button
+              onClick={() => setSelectedCategory("all")}
+              className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                selectedCategory === "all"
+                  ? "bg-emerald-600 text-white"
+                  : "text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              Todas las categorías
+            </button>
+            {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setSelectedCategory(value as AuctionCategory)}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  selectedCategory === value
+                    ? "bg-emerald-600 text-white"
+                    : "text-slate-300 hover:bg-slate-800"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Estado */}
+      <div>
+        <button
+          onClick={() => toggleSection("status")}
+          className="flex items-center justify-between w-full text-left mb-3"
+        >
+          <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
+            Estado
+          </h3>
+          {expandedSections.status ? (
+            <ChevronUp className="w-4 h-4 text-slate-400" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          )}
+        </button>
+        {expandedSections.status && (
+          <div className="space-y-1">
+            {[
+              { value: "all", label: "Todas" },
+              { value: "active", label: "Activas" },
+              { value: "ended", label: "Finalizadas" },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setSelectedStatus(option.value as AuctionStatus | "all")}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  selectedStatus === option.value
+                    ? "bg-emerald-600 text-white"
+                    : "text-slate-300 hover:bg-slate-800"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Rango de precio */}
+      <div>
+        <button
+          onClick={() => toggleSection("price")}
+          className="flex items-center justify-between w-full text-left mb-3"
+        >
+          <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
+            Precio
+          </h3>
+          {expandedSections.price ? (
+            <ChevronUp className="w-4 h-4 text-slate-400" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          )}
+        </button>
+        {expandedSections.price && (
+          <div className="space-y-1">
+            {PRICE_RANGES.map((range) => (
+              <button
+                key={range.value}
+                onClick={() => setPriceRange(range.value)}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  priceRange === range.value
+                    ? "bg-emerald-600 text-white"
+                    : "text-slate-300 hover:bg-slate-800"
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Botón limpiar filtros */}
+      {activeFiltersCount > 0 && (
+        <button
+          onClick={clearAllFilters}
+          className="w-full py-2 text-sm text-slate-400 hover:text-white transition-colors"
+        >
+          Limpiar filtros ({activeFiltersCount})
+        </button>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-slate-950 flex flex-col">
+      <Navbar />
+
+      <main className="flex-1 pt-20">
+        {/* Header con búsqueda */}
+        <div className="bg-slate-900 border-b border-slate-800">
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="max-w-2xl mx-auto">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar subastas..."
+                  className="w-full pl-12 pr-12 py-4 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                  autoFocus
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-white transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Info de resultados */}
+            <div className="max-w-2xl mx-auto mt-4 flex items-center justify-between">
+              <p className="text-slate-400 text-sm">
+                {loading ? (
+                  "Buscando..."
+                ) : (
+                  <>
+                    <span className="text-white font-medium">{filteredAuctions.length}</span>
+                    {" "}resultado{filteredAuctions.length !== 1 ? "s" : ""}
+                    {searchQuery && (
+                      <>
+                        {" "}para "<span className="text-emerald-400">{searchQuery}</span>"
+                      </>
+                    )}
+                  </>
+                )}
+              </p>
+
+              {/* Ordenar (desktop) */}
+              <div className="hidden md:flex items-center gap-2">
+                <span className="text-slate-500 text-sm">Ordenar:</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-500"
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="flex gap-8">
+            {/* Sidebar de filtros (desktop) */}
+            <aside className="hidden lg:block w-64 shrink-0">
+              <div className="sticky top-24 bg-slate-900 border border-slate-800 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-semibold text-white flex items-center gap-2">
+                    <SlidersHorizontal className="w-4 h-4" />
+                    Filtros
+                  </h2>
+                  {activeFiltersCount > 0 && (
+                    <span className="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </div>
+                <FiltersContent />
+              </div>
+            </aside>
+
+            {/* Contenido principal */}
+            <div className="flex-1">
+              {/* Botón filtros mobile */}
+              <div className="lg:hidden mb-4 flex gap-2">
+                <button
+                  onClick={() => setShowMobileFilters(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  Filtros
+                  {activeFiltersCount > 0 && (
+                    <span className="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Ordenar mobile */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="flex-1 bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500"
+                >
+                  {SORT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tags de filtros activos */}
+              {(searchQuery || activeFiltersCount > 0) && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {searchQuery && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-800 text-white text-sm rounded-full">
+                      "{searchQuery}"
+                      <button
+                        onClick={() => setSearchQuery("")}
+                        className="hover:text-red-400 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  {selectedCategory !== "all" && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-800 text-white text-sm rounded-full">
+                      {CATEGORY_LABELS[selectedCategory]}
+                      <button
+                        onClick={() => setSelectedCategory("all")}
+                        className="hover:text-red-400 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                  {priceRange !== "all" && (
+                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-800 text-white text-sm rounded-full">
+                      {PRICE_RANGES.find((r) => r.value === priceRange)?.label}
+                      <button
+                        onClick={() => setPriceRange("all")}
+                        className="hover:text-red-400 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Resultados */}
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+                </div>
+              ) : filteredAuctions.length === 0 ? (
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
+                  <Gavel className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-white mb-2">
+                    No se encontraron resultados
+                  </h3>
+                  <p className="text-slate-500 mb-6">
+                    {searchQuery
+                      ? `No hay subastas que coincidan con "${searchQuery}"`
+                      : "Intenta con otros filtros o términos de búsqueda"}
+                  </p>
+                  <Button variant="outline" onClick={clearAllFilters}>
+                    Limpiar filtros
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {filteredAuctions.map((auction) => (
+                    <AuctionCard key={auction.id} auction={auction} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Modal filtros mobile */}
+      {showMobileFilters && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setShowMobileFilters(false)}
+          />
+          <div className="absolute right-0 top-0 bottom-0 w-80 max-w-full bg-slate-900 border-l border-slate-800 p-4 overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="font-semibold text-white text-lg">Filtros</h2>
+              <button
+                onClick={() => setShowMobileFilters(false)}
+                className="p-2 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <FiltersContent />
+            <div className="mt-6 pt-4 border-t border-slate-800">
+              <Button
+                className="w-full"
+                onClick={() => setShowMobileFilters(false)}
+              >
+                Ver {filteredAuctions.length} resultados
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Footer />
+    </div>
+  );
+}

@@ -119,7 +119,7 @@ export function EndingSoonSection() {
             <h2 className="text-2xl font-bold text-white">Terminan Pronto</h2>
           </div>
           <Link
-            href="/auctions?sort=endTime-asc"
+            href="/search"
             className="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1"
           >
             Ver todas
