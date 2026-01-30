@@ -145,7 +145,7 @@ export default function AuctionsPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value as AuctionCategory | "all")}
-                className="appearance-none bg-[#252525] border border-gray-700 rounded-lg px-4 py-2 pr-10 text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                className="appearance-none bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 pr-10 text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
                 {categories.map((cat) => (
                   <option key={cat.value} value={cat.value}>
@@ -161,7 +161,7 @@ export default function AuctionsPage() {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value as AuctionStatus | "all")}
-                className="appearance-none bg-[#252525] border border-gray-700 rounded-lg px-4 py-2 pr-10 text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                className="appearance-none bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 pr-10 text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
                 {STATUS_OPTIONS.map((status) => (
                   <option key={status.value} value={status.value}>
@@ -177,7 +177,7 @@ export default function AuctionsPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none bg-[#252525] border border-gray-700 rounded-lg px-4 py-2 pr-10 text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
+                className="appearance-none bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 pr-10 text-white focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
                 {SORT_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -224,7 +224,7 @@ export default function AuctionsPage() {
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value as AuctionCategory | "all")}
-                    className="w-full appearance-none bg-[#252525] border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
                   >
                     {categories.map((cat) => (
                       <option key={cat.value} value={cat.value}>
@@ -240,7 +240,7 @@ export default function AuctionsPage() {
                   <select
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value as AuctionStatus | "all")}
-                    className="w-full appearance-none bg-[#252525] border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
                   >
                     {STATUS_OPTIONS.map((status) => (
                       <option key={status.value} value={status.value}>
@@ -256,7 +256,7 @@ export default function AuctionsPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full appearance-none bg-[#252525] border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500"
                   >
                     {SORT_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>

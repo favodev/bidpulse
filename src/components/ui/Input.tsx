@@ -28,15 +28,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             type={inputType}
             className={`
               w-full px-4 py-3 
-              bg-slate-800/50 
+              bg-slate-800 
               border border-slate-700 
               rounded-lg 
               text-white 
               placeholder:text-slate-500
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+              focus:outline-none focus:border-emerald-500
               transition-all duration-200
               disabled:opacity-50 disabled:cursor-not-allowed
-              ${error ? "border-red-500 focus:ring-red-500" : ""}
+              ${error ? "border-red-500" : ""}
               ${isPassword || rightElement ? "pr-12" : ""}
               ${className}
             `}

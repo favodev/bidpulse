@@ -8,9 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui";
 
 const navLinks = [
-  { href: "/how-it-works", label: "Cómo Funciona" },
   { href: "/auctions", label: "Subastas" },
-  { href: "/community", label: "Comunidad" },
 ];
 
 export function Navbar() {
@@ -97,7 +95,7 @@ export function Navbar() {
                 {userMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-lg py-2 z-50">
                     {/* Info del usuario */}
-                    <div className="px-4 py-2 border-b border-gray-700">
+                    <div className="px-4 py-2 border-b border-slate-700">
                       <p className="text-white text-sm font-medium truncate">
                         {user.displayName || "Usuario"}
                       </p>
@@ -109,7 +107,7 @@ export function Navbar() {
                     <Link
                       href="/profile"
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-[#252525] hover:text-white transition-colors cursor-pointer"
+                      className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
                     >
                       <Settings className="w-4 h-4" />
                       Editar perfil
@@ -117,7 +115,7 @@ export function Navbar() {
 
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-[#252525] transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
                       Cerrar sesión

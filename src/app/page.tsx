@@ -1,4 +1,4 @@
-import { Navbar } from "@/components/layout";
+import { Navbar, Footer } from "@/components/layout";
 import {
   HeroSection,
   EndingSoonSection,
@@ -9,7 +9,7 @@ import {
 export default function Home() {
   return (
     <div className="min-h-screen bg-slate-950">
-      {/* Barra de navegación */}
+      {/* Navbar */}
       <Navbar />
 
       {/* Contenido principal */}
@@ -19,6 +19,9 @@ export default function Home() {
         <PopularAuctionsSection />
         <CategoriesSection />
       </main>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

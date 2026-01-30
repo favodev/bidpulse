@@ -104,7 +104,7 @@ export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
 
           {/* Footer */}
           {!compact && (
-            <div className="flex items-center justify-between pt-3 border-t border-gray-800">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
               <div className="flex items-center gap-1 text-gray-500 text-xs">
                 <Gavel className="w-3 h-3" />
                 {auction.bidsCount} pujas

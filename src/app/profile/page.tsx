@@ -281,7 +281,7 @@ export default function ProfilePage() {
                 <Mail className="w-4 h-4" />
                 Correo electrónico
               </label>
-              <div className="w-full bg-[#252525] border border-gray-700 rounded-lg px-4 py-3 text-gray-400">
+              <div className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-gray-400">
                 {user.email}
               </div>
             </div>
@@ -297,7 +297,7 @@ export default function ProfilePage() {
                 value={formData.displayName}
                 onChange={handleChange}
                 placeholder="Tu nombre"
-                className="w-full bg-[#252525] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -313,7 +313,7 @@ export default function ProfilePage() {
                 onChange={handleChange}
                 rows={3}
                 placeholder="Cuéntanos sobre ti..."
-                className="w-full bg-[#252525] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
               />
             </div>
           </div>
