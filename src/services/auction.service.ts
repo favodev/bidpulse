@@ -301,3 +301,80 @@ export function formatTimeRemaining(endTime: Timestamp): string {
   }
   return `${seconds}s`;
 }
+
+export async function finalizeAuction(auctionId: string): Promise<boolean> {
+  try {
+    const auction = await getAuction(auctionId);
+    if (!auction) return false;
+
+    const now = Timestamp.now();
+    const isExpired = auction.endTime.toMillis() <= now.toMillis();
+    const isActive = auction.status === "active";
+
+    if (!isExpired || !isActive) return false;
+
+    await updateAuction(auctionId, {
+      status: "ended" as AuctionStatus,
+    });
+
+    console.log(`[AuctionService] Auction ${auctionId} finalized`);
+    return true;
+  } catch (error) {
+    console.error(`[AuctionService] Error finalizing auction ${auctionId}:`, error);
+    return false;
+  }
+}
+
+export async function finalizeExpiredAuctions(): Promise<number> {
+  try {
+    const now = Timestamp.now();
+    
+    // Buscar subastas activas cuyo tiempo ha expirado
+    const q = query(
+      auctionsRef,
+      where("status", "==", "active"),
+      where("endTime", "<=", now),
+      limit(50) 
+    );
+
+    const querySnapshot = await getDocs(q);
+    let finalizedCount = 0;
+
+    const updatePromises = querySnapshot.docs.map(async (docSnap) => {
+      try {
+        await updateDoc(doc(db, AUCTIONS_COLLECTION, docSnap.id), {
+          status: "ended" as AuctionStatus,
+          updatedAt: serverTimestamp(),
+        });
+        finalizedCount++;
+        console.log(`[AuctionService] Finalized auction: ${docSnap.id}`);
+      } catch (err) {
+        console.error(`[AuctionService] Failed to finalize ${docSnap.id}:`, err);
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    if (finalizedCount > 0) {
+      console.log(`[AuctionService] Finalized ${finalizedCount} expired auctions`);
+    }
+
+    return finalizedCount;
+  } catch (error) {
+    console.error("[AuctionService] Error finalizing expired auctions:", error);
+    return 0;
+  }
+}
+
+export async function checkAndFinalizeAuction(auction: Auction): Promise<Auction> {
+  const now = Timestamp.now();
+  const isExpired = auction.endTime.toMillis() <= now.toMillis();
+  const isActive = auction.status === "active";
+
+  if (isExpired && isActive) {
+    await finalizeAuction(auction.id);
+    return { ...auction, status: "ended" };
+  }
+
+  return auction;
+}

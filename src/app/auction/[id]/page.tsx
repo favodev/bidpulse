@@ -9,6 +9,7 @@ import {
   subscribeToAuction,
   formatTimeRemaining,
   getTimeRemaining,
+  checkAndFinalizeAuction,
 } from "@/services/auction.service";
 import { subscribeToAuctionBids, formatBidAmount } from "@/services/bid.service";
 import { Navbar } from "@/components/layout";
@@ -29,8 +30,13 @@ export default function AuctionDetailPage() {
   useEffect(() => {
     if (!auctionId) return;
 
-    const unsubscribe = subscribeToAuction(auctionId, (data) => {
-      setAuction(data);
+    const unsubscribe = subscribeToAuction(auctionId, async (data) => {
+      if (data) {
+        const finalizedAuction = await checkAndFinalizeAuction(data);
+        setAuction(finalizedAuction);
+      } else {
+        setAuction(null);
+      }
       setLoading(false);
     });
 
