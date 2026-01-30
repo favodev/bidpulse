@@ -106,7 +106,7 @@ export default function CreateAuctionPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="min-h-screen bg-slate-950">
         <Navbar />
         <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] gap-4">
           <p className="text-gray-400 text-lg">Debes iniciar sesión para crear una subasta</p>
@@ -149,7 +149,7 @@ export default function CreateAuctionPage() {
               onChange={handleChange}
               rows={4}
               placeholder="Describe tu artículo en detalle..."
-              className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
             />
           </div>
 
@@ -214,7 +214,7 @@ export default function CreateAuctionPage() {
                 name="duration"
                 value={formData.duration}
                 onChange={handleChange}
-                className="w-full bg-[#1a1a1a] border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
               >
                 <option value="1">1 día</option>
                 <option value="3">3 días</option>

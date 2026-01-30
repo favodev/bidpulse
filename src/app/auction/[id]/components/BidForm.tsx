@@ -73,7 +73,7 @@ export default function BidForm({ auction }: BidFormProps) {
 
   if (isAuctionEnded) {
     return (
-      <div className="bg-[#1a1a1a] rounded-2xl p-6 text-center">
+      <div className="bg-slate-900 rounded-2xl p-6 text-center">
         <p className="text-gray-400">Esta subasta ha finalizado</p>
         {auction.winnerName && (
           <p className="text-white mt-2">
@@ -86,14 +86,14 @@ export default function BidForm({ auction }: BidFormProps) {
 
   if (isSeller) {
     return (
-      <div className="bg-[#1a1a1a] rounded-2xl p-6 text-center">
+      <div className="bg-slate-900 rounded-2xl p-6 text-center">
         <p className="text-gray-400">No puedes pujar en tu propia subasta</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#1a1a1a] rounded-2xl p-6 space-y-4">
+    <div className="bg-slate-900 rounded-2xl p-6 space-y-4">
       {error && <Alert variant="error" message={error} />}
       {success && <Alert variant="success" message={success} />}
 

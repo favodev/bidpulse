@@ -68,7 +68,7 @@ export default function AuctionDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="min-h-screen bg-slate-950">
         <Navbar />
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
           <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -79,7 +79,7 @@ export default function AuctionDetailPage() {
 
   if (!auction) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="min-h-screen bg-slate-950">
         <Navbar />
         <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] gap-4">
           <p className="text-gray-400 text-lg">Subasta no encontrada</p>
@@ -98,7 +98,7 @@ export default function AuctionDetailPage() {
   const isEnding = getTimeRemaining(auction.endTime).total < 300000; 
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-slate-950">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -114,7 +114,7 @@ export default function AuctionDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Galería de imágenes */}
           <div className="space-y-4">
-            <div className="relative aspect-square bg-[#1a1a1a] rounded-2xl overflow-hidden">
+            <div className="relative aspect-square bg-slate-900 rounded-2xl overflow-hidden">
               {auction.images && auction.images.length > 0 ? (
                 <Image
                   src={auction.images[selectedImage]}
@@ -171,10 +171,10 @@ export default function AuctionDetailPage() {
                   {auction.title}
                 </h1>
                 <div className="flex gap-2">
-                  <button className="p-2 rounded-lg bg-[#1a1a1a] text-gray-400 hover:text-white transition-colors">
+                  <button className="p-2 rounded-lg bg-slate-900 text-gray-400 hover:text-white transition-colors">
                     <Heart className="w-5 h-5" />
                   </button>
-                  <button className="p-2 rounded-lg bg-[#1a1a1a] text-gray-400 hover:text-white transition-colors">
+                  <button className="p-2 rounded-lg bg-slate-900 text-gray-400 hover:text-white transition-colors">
                     <Share2 className="w-5 h-5" />
                   </button>
                 </div>
@@ -185,7 +185,7 @@ export default function AuctionDetailPage() {
             </div>
 
             {/* Precio actual */}
-            <div className="bg-[#1a1a1a] rounded-2xl p-6">
+            <div className="bg-slate-900 rounded-2xl p-6">
               <p className="text-gray-400 text-sm mb-1">Puja actual</p>
               <p className="text-3xl sm:text-4xl font-bold text-white">
                 {formatBidAmount(auction.currentBid)}

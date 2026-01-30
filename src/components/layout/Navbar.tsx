@@ -95,7 +95,7 @@ export function Navbar() {
 
                 {/* Dropdown */}
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-[#1a1a1a] border border-gray-700 rounded-xl shadow-lg py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-lg py-2 z-50">
                     {/* Info del usuario */}
                     <div className="px-4 py-2 border-b border-gray-700">
                       <p className="text-white text-sm font-medium truncate">

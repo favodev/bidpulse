@@ -147,12 +147,10 @@ export default function ProfilePage() {
     };
     reader.readAsDataURL(file);
     
-    // Limpiar input para poder seleccionar el mismo archivo de nuevo
     e.target.value = "";
   };
 
   const handleCropComplete = (croppedBlob: Blob) => {
-    // Crear URL para preview
     const previewUrl = URL.createObjectURL(croppedBlob);
     setPreviewAvatar(previewUrl);
     setPendingAvatarBlob(croppedBlob);
@@ -176,7 +174,7 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="min-h-screen bg-slate-950">
         <Navbar />
         <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] gap-4">
           <p className="text-gray-400 text-lg">Debes iniciar sesión para ver tu perfil</p>
@@ -188,7 +186,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="min-h-screen bg-slate-950">
         <Navbar />
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
           <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
@@ -198,7 +196,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-slate-950">
       <Navbar />
 
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -223,7 +221,7 @@ export default function ProfilePage() {
           <div className="relative">
             <div
               onClick={handleAvatarClick}
-              className="w-32 h-32 rounded-full bg-[#1a1a1a] border-4 border-[#252525] overflow-hidden cursor-pointer group"
+              className="w-32 h-32 rounded-full bg-slate-900 border-4 border-slate-800 overflow-hidden cursor-pointer group"
             >
               {previewAvatar || profile?.avatar ? (
                 <img
@@ -270,7 +268,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Formulario */}
-        <div className="bg-[#1a1a1a] rounded-2xl p-6 space-y-6">
+        <div className="bg-slate-900 rounded-2xl p-6 space-y-6">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <User className="w-5 h-5 text-emerald-500" />
             Información personal

@@ -112,7 +112,7 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel, isUploading }
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
-      <div className="bg-[#1a1a1a] rounded-2xl max-w-lg w-full p-6 space-y-4">
+      <div className="bg-slate-900 rounded-2xl max-w-lg w-full p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">Recortar imagen</h3>
           <button
@@ -124,7 +124,7 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel, isUploading }
           </button>
         </div>
 
-        <div className="flex justify-center bg-[#0a0a0a] rounded-xl p-4">
+        <div className="flex justify-center bg-slate-900 rounded-xl p-4">
           <ReactCrop
             crop={crop}
             onChange={(_, percentCrop) => setCrop(percentCrop)}
