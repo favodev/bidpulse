@@ -302,6 +302,25 @@ export const translations = {
       cropImage: "Recortar imagen",
       rotate: "Rotar",
     },
+    // Notifications
+    notifications: {
+      title: "Notificaciones",
+      empty: "No tienes notificaciones",
+      markRead: "Marcar como leída",
+      markAllRead: "Marcar todas como leídas",
+      delete: "Eliminar",
+      clearAll: "Limpiar todo",
+      enablePush: "Activa las notificaciones push para no perderte nada",
+      enable: "Activar",
+      pushEnabled: "Notificaciones push activadas",
+      pushDenied: "Las notificaciones están bloqueadas en tu navegador",
+      outbid: "Te han superado",
+      auctionWon: "¡Ganaste!",
+      auctionEnding: "Subasta por terminar",
+      auctionEnded: "Subasta finalizada",
+      newBid: "Nueva puja",
+      viewAuction: "Ver subasta",
+    },
     // Share Modal
     shareModal: {
       title: "Compartir subasta",
@@ -633,6 +652,25 @@ export const translations = {
       seeLess: "See less",
       cropImage: "Crop image",
       rotate: "Rotate",
+    },
+    // Notifications
+    notifications: {
+      title: "Notifications",
+      empty: "You have no notifications",
+      markRead: "Mark as read",
+      markAllRead: "Mark all as read",
+      delete: "Delete",
+      clearAll: "Clear all",
+      enablePush: "Enable push notifications to never miss an update",
+      enable: "Enable",
+      pushEnabled: "Push notifications enabled",
+      pushDenied: "Notifications are blocked in your browser",
+      outbid: "You've been outbid",
+      auctionWon: "You won!",
+      auctionEnding: "Auction ending soon",
+      auctionEnded: "Auction ended",
+      newBid: "New bid",
+      viewAuction: "View auction",
     },
     // Share Modal
     shareModal: {

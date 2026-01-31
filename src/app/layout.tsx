@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/hooks/useAuth";
+import { NotificationsProvider } from "@/hooks/useNotifications";
 import { LanguageProvider } from "@/i18n";
 import "./globals.css";
 
@@ -36,7 +37,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <LanguageProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <NotificationsProvider>
+              {children}
+            </NotificationsProvider>
+          </AuthProvider>
         </LanguageProvider>
       </body>
     </html>

@@ -16,6 +16,7 @@ import {
 import { db } from "@/lib/firebase";
 import { Bid, CreateBidData, BidResult, BID_ERROR_MESSAGES } from "@/types/bid.types";
 import { Auction } from "@/types/auction.types";
+import { notifyOutbid, notifyNewBid } from "./notification.service";
 
 const BIDS_COLLECTION = "bids";
 const AUCTIONS_COLLECTION = "auctions";
@@ -155,8 +156,36 @@ export async function placeBid(data: CreateBidData): Promise<BidResult> {
         bidId: bidRef.id,
         newCurrentBid: amount,
         timeExtended: isSnipingAttempt,
+        // Datos para notificaciones (fuera de la transacción)
+        _notificationData: {
+          previousBidderId: auction.highestBidderId,
+          sellerId: auction.sellerId,
+          auctionTitle: auction.title,
+        },
       };
     });
+
+    // Enviar notificaciones fuera de la transacción
+    if (result.success && result._notificationData) {
+      const { previousBidderId, sellerId, auctionTitle } = result._notificationData;
+
+      // Notificar al pujador anterior que fue superado
+      if (previousBidderId && previousBidderId !== bidderId) {
+        notifyOutbid(previousBidderId, auctionId, auctionTitle, amount, bidderName).catch(
+          (err) => console.error("[BidService] Error notifying outbid:", err)
+        );
+      }
+
+      // Notificar al vendedor de la nueva puja
+      if (sellerId !== bidderId) {
+        notifyNewBid(sellerId, auctionId, auctionTitle, amount, bidderName).catch(
+          (err) => console.error("[BidService] Error notifying seller:", err)
+        );
+      }
+
+      // Limpiar datos internos antes de retornar
+      delete (result as Record<string, unknown>)._notificationData;
+    }
 
     return result;
   } catch (error) {

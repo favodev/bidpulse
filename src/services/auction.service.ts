@@ -22,6 +22,7 @@ import {
   CreateAuctionData,
   AuctionFilters,
 } from "@/types/auction.types";
+import { notifyAuctionWon, notifyAuctionEnded } from "./notification.service";
 
 const AUCTIONS_COLLECTION = "auctions";
 const auctionsRef = collection(db, AUCTIONS_COLLECTION);
@@ -342,12 +343,35 @@ export async function finalizeExpiredAuctions(): Promise<number> {
 
     const updatePromises = querySnapshot.docs.map(async (docSnap) => {
       try {
+        const auctionData = docSnap.data() as Auction;
+        
         await updateDoc(doc(db, AUCTIONS_COLLECTION, docSnap.id), {
           status: "ended" as AuctionStatus,
           updatedAt: serverTimestamp(),
         });
         finalizedCount++;
         console.log(`[AuctionService] Finalized auction: ${docSnap.id}`);
+
+        // Enviar notificaciones
+        // Notificar al ganador
+        if (auctionData.highestBidderId) {
+          notifyAuctionWon(
+            auctionData.highestBidderId,
+            docSnap.id,
+            auctionData.title,
+            auctionData.currentBid
+          ).catch((err) => console.error("[AuctionService] Error notifying winner:", err));
+        }
+
+        // Notificar al vendedor
+        notifyAuctionEnded(
+          auctionData.sellerId,
+          docSnap.id,
+          auctionData.title,
+          auctionData.currentBid,
+          auctionData.highestBidderName
+        ).catch((err) => console.error("[AuctionService] Error notifying seller:", err));
+
       } catch (err) {
         console.error(`[AuctionService] Failed to finalize ${docSnap.id}:`, err);
       }

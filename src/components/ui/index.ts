@@ -4,3 +4,4 @@ export { Logo } from "./Logo";
 export { Alert } from "./Alert";
 export { ImageCropper } from "./ImageCropper";
 export { LanguageToggle } from "./LanguageToggle";
+export { NotificationCenter } from "./NotificationCenter";

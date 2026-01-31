@@ -6,7 +6,7 @@ import Image from "next/image";
 import { User, Menu, X, LogOut, Settings, UserPlus, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuctionAutoFinalize } from "@/hooks/useAuctionAutoFinalize";
-import { Button, LanguageToggle } from "@/components/ui";
+import { Button, LanguageToggle, NotificationCenter } from "@/components/ui";
 import { useLanguage } from "@/i18n";
 
 export function Navbar() {
@@ -88,26 +88,28 @@ export function Navbar() {
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-slate-800 animate-pulse" />
             ) : user ? (
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="p-2 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                >
-                  {userAvatar ? (
-                    <img
-                      src={userAvatar}
-                      alt=""
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <User className="w-5 h-5" />
-                  )}
-                </button>
+              <>
+                <NotificationCenter />
+                <div className="relative" ref={userMenuRef}>
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="p-2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {userAvatar ? (
+                      <img
+                        src={userAvatar}
+                        alt=""
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-5 h-5" />
+                    )}
+                  </button>
 
-                {/* Dropdown */}
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-lg py-2 z-50">
-                    {/* Info del usuario */}
+                  {/* Dropdown */}
+                  {userMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-lg py-2 z-50">
+                      {/* Info del usuario */}
                     <div className="px-4 py-2 border-b border-slate-700">
                       <p className="text-white text-sm font-medium truncate">
                         {user.displayName || t.nav.user}
@@ -144,7 +146,8 @@ export function Navbar() {
                     </button>
                   </div>
                 )}
-              </div>
+                </div>
+              </>
             ) : (
               /* Botones de login/registro (si no está logueado) */
               <div className="flex items-center gap-2">
