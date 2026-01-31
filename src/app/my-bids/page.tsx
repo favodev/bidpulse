@@ -19,6 +19,7 @@ import { getAuction } from "@/services/auction.service";
 import { Bid } from "@/types/bid.types";
 import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
+import { useLanguage } from "@/i18n";
 
 type TabType = "active" | "won" | "outbid" | "all";
 
@@ -34,12 +35,12 @@ const formatPrice = (price: number) => {
   return `$${formatted} CLP`;
 };
 
-function formatTimeRemaining(endTime: Timestamp): string {
+function formatTimeRemaining(endTime: Timestamp, t: { auction: { ended: string } }): string {
   const now = new Date();
   const end = endTime.toDate();
   const diff = end.getTime() - now.getTime();
 
-  if (diff <= 0) return "Finalizada";
+  if (diff <= 0) return t.auction.ended;
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -50,7 +51,7 @@ function formatTimeRemaining(endTime: Timestamp): string {
   return `${minutes}m`;
 }
 
-function BidCard({ bid }: { bid: BidWithAuction }) {
+function BidCard({ bid, t }: { bid: BidWithAuction; t: ReturnType<typeof useLanguage>['t'] }) {
   const auction = bid.auction;
   if (!auction) return null;
 
@@ -65,7 +66,7 @@ function BidCard({ bid }: { bid: BidWithAuction }) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-full">
           <Trophy className="w-3 h-3" />
-          Ganaste
+          {t.myBids.youWon}
         </span>
       );
     }
@@ -73,7 +74,7 @@ function BidCard({ bid }: { bid: BidWithAuction }) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-emerald-500/20 text-emerald-400 rounded-full">
           <TrendingUp className="w-3 h-3" />
-          Puja más alta
+          {t.myBids.winning}
         </span>
       );
     }
@@ -81,7 +82,7 @@ function BidCard({ bid }: { bid: BidWithAuction }) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-amber-500/20 text-amber-400 rounded-full">
           <AlertCircle className="w-3 h-3" />
-          Superada
+          {t.myBids.outbidStatus}
         </span>
       );
     }
@@ -89,7 +90,7 @@ function BidCard({ bid }: { bid: BidWithAuction }) {
       return (
         <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-red-500/20 text-red-400 rounded-full">
           <AlertCircle className="w-3 h-3" />
-          No ganaste
+          {t.myBids.lost}
         </span>
       );
     }
@@ -141,11 +142,11 @@ function BidCard({ bid }: { bid: BidWithAuction }) {
           {/* Detalles de puja */}
           <div className="mt-3 flex flex-wrap items-center gap-4 text-sm">
             <div>
-              <span className="text-slate-500">Tu puja:</span>
+              <span className="text-slate-500">{t.auction.yourBid}:</span>
               <span className="ml-1 font-semibold text-white">{formatPrice(bid.amount)}</span>
             </div>
             <div>
-              <span className="text-slate-500">Puja actual:</span>
+              <span className="text-slate-500">{t.auction.currentBid}:</span>
               <span className={`ml-1 font-semibold ${isWinning ? 'text-emerald-400' : 'text-amber-400'}`}>
                 {formatPrice(auction.currentBid)}
               </span>
@@ -153,7 +154,7 @@ function BidCard({ bid }: { bid: BidWithAuction }) {
             <div className="flex items-center gap-1">
               <Clock className="w-4 h-4 text-slate-500" />
               <span className={isEnded ? "text-red-400" : "text-slate-400"}>
-                {formatTimeRemaining(auction.endTime)}
+                {formatTimeRemaining(auction.endTime, t)}
               </span>
             </div>
           </div>
@@ -166,7 +167,7 @@ function BidCard({ bid }: { bid: BidWithAuction }) {
                 className="inline-flex items-center gap-1 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
               >
                 <TrendingUp className="w-4 h-4" />
-                Pujar de nuevo
+                {t.auction.bidNow}
               </Link>
             </div>
           )}
@@ -179,6 +180,7 @@ function BidCard({ bid }: { bid: BidWithAuction }) {
 export default function MyBidsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { t } = useLanguage();
   const [bids, setBids] = useState<BidWithAuction[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("active");
@@ -283,10 +285,10 @@ export default function MyBidsPage() {
   };
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode; count: number }[] = [
-    { id: "active", label: "Ganando", icon: <TrendingUp className="w-4 h-4" />, count: counts.active },
-    { id: "outbid", label: "Superadas", icon: <AlertCircle className="w-4 h-4" />, count: counts.outbid },
-    { id: "won", label: "Ganadas", icon: <Trophy className="w-4 h-4" />, count: counts.won },
-    { id: "all", label: "Todas", icon: <Gavel className="w-4 h-4" />, count: counts.all },
+    { id: "active", label: t.myBids.winning, icon: <TrendingUp className="w-4 h-4" />, count: counts.active },
+    { id: "outbid", label: t.myBids.outbid, icon: <AlertCircle className="w-4 h-4" />, count: counts.outbid },
+    { id: "won", label: t.myBids.won, icon: <Trophy className="w-4 h-4" />, count: counts.won },
+    { id: "all", label: t.myBids.all, icon: <Gavel className="w-4 h-4" />, count: counts.all },
   ];
 
   if (authLoading) {
@@ -302,15 +304,15 @@ export default function MyBidsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
       <Navbar />
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 pt-24">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Mis Pujas</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">{t.myBids.title}</h1>
           <p className="text-slate-400">
-            Gestiona las subastas en las que has participado
+            {t.myBids.subtitle}
           </p>
         </div>
 
@@ -354,28 +356,23 @@ export default function MyBidsPage() {
               <Gavel className="w-8 h-8 text-slate-600" />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">
-              {activeTab === "active" && "No tienes pujas activas ganando"}
-              {activeTab === "won" && "Aún no has ganado ninguna subasta"}
-              {activeTab === "outbid" && "No tienes pujas superadas"}
-              {activeTab === "all" && "No has realizado ninguna puja"}
+              {t.myBids.noBids}
             </h3>
             <p className="text-slate-500 mb-6">
-              {activeTab === "all" 
-                ? "Explora las subastas disponibles y comienza a pujar"
-                : "Explora las subastas disponibles"}
+              {t.myBids.exploreAuctions}
             </p>
             <Link
               href="/search"
               className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors"
             >
               <Gavel className="w-5 h-5" />
-              Explorar Subastas
+              {t.nav.explore}
             </Link>
           </div>
         ) : (
           <div className="space-y-4">
             {filteredBids.map((bid) => (
-              <BidCard key={`${bid.auctionId}-${bid.id}`} bid={bid} />
+              <BidCard key={`${bid.auctionId}-${bid.id}`} bid={bid} t={t} />
             ))}
           </div>
         )}

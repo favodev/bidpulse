@@ -6,6 +6,7 @@ import { Heart, Loader2, ArrowRight } from "lucide-react";
 import { getPopularAuctions } from "@/services/auction.service";
 import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
+import { useLanguage } from "@/i18n";
 
 const formatPrice = (price: number) => {
   const formatted = new Intl.NumberFormat("es-CL", {
@@ -15,12 +16,12 @@ const formatPrice = (price: number) => {
   return `$${formatted} CLP`;
 };
 
-function formatTimeRemaining(endTime: Timestamp): string {
+function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
   const now = new Date();
   const end = endTime.toDate();
   const diff = end.getTime() - now.getTime();
 
-  if (diff <= 0) return "Finalizada";
+  if (diff <= 0) return endedText;
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -31,9 +32,9 @@ function formatTimeRemaining(endTime: Timestamp): string {
   return `${minutes}m`;
 }
 
-function PopularAuctionCard({ auction }: { auction: Auction }) {
+function PopularAuctionCard({ auction, t }: { auction: Auction; t: ReturnType<typeof useLanguage>['t'] }) {
   const [isLiked, setIsLiked] = useState(false);
-  const timeLeft = formatTimeRemaining(auction.endTime);
+  const timeLeft = formatTimeRemaining(auction.endTime, t.auction.ended);
 
   return (
     <Link
@@ -50,13 +51,13 @@ function PopularAuctionCard({ auction }: { auction: Auction }) {
           />
         ) : (
           <div className="w-full h-full bg-linear-to-br from-slate-700 to-slate-800 flex items-center justify-center text-slate-500">
-            Sin imagen
+            No image
           </div>
         )}
 
         {/* Badge de pujas */}
         <div className="absolute bottom-3 left-3 bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1 rounded-md">
-          {auction.bidsCount} Pujas
+          {auction.bidsCount} {t.home.bids}
         </div>
 
         {/* Botón favorito */}
@@ -80,11 +81,11 @@ function PopularAuctionCard({ auction }: { auction: Auction }) {
 
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-slate-500 text-xs">Puja Actual</p>
+            <p className="text-slate-500 text-xs">{t.auction.currentBid}</p>
             <p className="text-white font-bold">{formatPrice(auction.currentBid)}</p>
           </div>
           <div className="text-right">
-            <p className="text-slate-500 text-xs">Termina en</p>
+            <p className="text-slate-500 text-xs">{t.auction.timeRemaining}</p>
             <p className="text-emerald-400 font-medium">{timeLeft}</p>
           </div>
         </div>
@@ -96,6 +97,7 @@ function PopularAuctionCard({ auction }: { auction: Auction }) {
 export function PopularAuctionsSection() {
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     async function loadAuctions() {
@@ -127,9 +129,9 @@ export function PopularAuctionsSection() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-white">Subastas Populares</h2>
+            <h2 className="text-2xl font-bold text-white">{t.home.popularAuctions}</h2>
             <p className="text-slate-500 text-sm mt-1">
-              Artículos con alta actividad en este momento.
+              {t.home.popularSubtitle}
             </p>
           </div>
 
@@ -137,7 +139,7 @@ export function PopularAuctionsSection() {
             href="/search"
             className="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1"
           >
-            Ver todas
+            {t.home.viewAll}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -146,19 +148,18 @@ export function PopularAuctionsSection() {
         {auctions.length === 0 ? (
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-12 text-center">
             <Heart className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-400">Aún no hay subastas populares</p>
-            <p className="text-slate-500 text-sm mt-1">Sé el primero en crear una subasta y atraer pujas</p>
+            <p className="text-slate-400">{t.home.noAuctions}</p>
             <Link
               href="/auction/create"
               className="inline-block mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors text-sm"
             >
-              Crear subasta
+              {t.nav.sellItem}
             </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {auctions.map((auction) => (
-              <PopularAuctionCard key={auction.id} auction={auction} />
+              <PopularAuctionCard key={auction.id} auction={auction} t={t} />
             ))}
           </div>
         )}

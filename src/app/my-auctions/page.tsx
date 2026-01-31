@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getAuctions, deleteAuction } from "@/services/auction.service";
 import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
+import { useLanguage } from "@/i18n";
 
 type TabType = "active" | "ended" | "all";
 
@@ -31,12 +32,12 @@ const formatPrice = (price: number) => {
   return `$${formatted} CLP`;
 };
 
-function formatTimeRemaining(endTime: Timestamp): string {
+function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
   const now = new Date();
   const end = endTime.toDate();
   const diff = end.getTime() - now.getTime();
 
-  if (diff <= 0) return "Finalizada";
+  if (diff <= 0) return endedText;
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -50,17 +51,19 @@ function formatTimeRemaining(endTime: Timestamp): string {
 function AuctionRow({
   auction,
   onDelete,
+  t,
 }: {
   auction: Auction;
   onDelete: (id: string) => void;
+  t: ReturnType<typeof useLanguage>['t'];
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const isEnded = auction.status === "ended" || auction.endTime.toDate() < new Date();
-  const timeLeft = formatTimeRemaining(auction.endTime);
+  const timeLeft = formatTimeRemaining(auction.endTime, t.auction.ended);
 
   const handleDelete = async () => {
-    if (!confirm("¿Estás seguro de eliminar esta subasta?")) return;
+    if (!confirm(t.myAuctions.deleteConfirm)) return;
     setDeleting(true);
     try {
       await deleteAuction(auction.id);
@@ -121,7 +124,7 @@ function AuctionRow({
                       className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
                     >
                       <Eye className="w-4 h-4" />
-                      Ver subasta
+                      {t.myAuctions.view}
                     </Link>
                     {!isEnded && (
                       <Link
@@ -129,7 +132,7 @@ function AuctionRow({
                         className="flex items-center gap-2 px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
                       >
                         <Edit className="w-4 h-4" />
-                        Editar
+                        {t.myAuctions.edit}
                       </Link>
                     )}
                     <button
@@ -142,7 +145,7 @@ function AuctionRow({
                       ) : (
                         <Trash2 className="w-4 h-4" />
                       )}
-                      Eliminar
+                      {t.myAuctions.delete}
                     </button>
                   </div>
                 </>
@@ -153,14 +156,14 @@ function AuctionRow({
           {/* Stats */}
           <div className="flex items-center gap-4 mt-3 text-sm">
             <div className="flex items-center gap-1.5">
-              <span className="text-slate-500">Puja actual:</span>
+              <span className="text-slate-500">{t.auction.currentBid}:</span>
               <span className="text-emerald-400 font-semibold">
                 {formatPrice(auction.currentBid)}
               </span>
             </div>
             <div className="flex items-center gap-1.5">
               <Gavel className="w-4 h-4 text-slate-500" />
-              <span className="text-slate-400">{auction.bidsCount} pujas</span>
+              <span className="text-slate-400">{auction.bidsCount} {t.auction.bids}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Clock className="w-4 h-4 text-slate-500" />
@@ -176,12 +179,12 @@ function AuctionRow({
           {isEnded ? (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-800 text-slate-400 text-xs rounded-full">
               <CheckCircle className="w-3 h-3" />
-              Finalizada
+              {t.auction.ended}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-              Activa
+              {t.myAuctions.activeStatus}
             </span>
           )}
         </div>
@@ -193,6 +196,7 @@ function AuctionRow({
 export default function MyAuctionsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("all");
@@ -260,9 +264,9 @@ export default function MyAuctionsPage() {
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-8 pt-24">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-white">Mis Subastas</h1>
+          <h1 className="text-2xl font-bold text-white">{t.myAuctions.title}</h1>
           <p className="text-slate-500 mt-1">
-            Gestiona las subastas que has creado
+            {t.myAuctions.subtitle}
           </p>
         </div>
 
@@ -276,7 +280,7 @@ export default function MyAuctionsPage() {
                 : "bg-slate-800 text-slate-400 hover:text-white"
             }`}
           >
-            Todas ({auctions.length})
+            {t.myAuctions.all} ({auctions.length})
           </button>
           <button
             onClick={() => setActiveTab("active")}
@@ -286,7 +290,7 @@ export default function MyAuctionsPage() {
                 : "bg-slate-800 text-slate-400 hover:text-white"
             }`}
           >
-            Activas ({activeCount})
+            {t.myAuctions.active} ({activeCount})
           </button>
           <button
             onClick={() => setActiveTab("ended")}
@@ -296,7 +300,7 @@ export default function MyAuctionsPage() {
                 : "bg-slate-800 text-slate-400 hover:text-white"
             }`}
           >
-            Finalizadas ({endedCount})
+            {t.myAuctions.ended} ({endedCount})
           </button>
         </div>
 
@@ -307,14 +311,14 @@ export default function MyAuctionsPage() {
               <>
                 <Gavel className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-white mb-2">
-                  No tienes subastas
+                  {t.myAuctions.noAuctions}
                 </h3>
                 <p className="text-slate-500 mb-6">
-                  Crea tu primera subasta y comienza a vender
+                  {t.myAuctions.createFirst}
                 </p>
                 <Link href="/auction/create">
                   <Button>
-                    Crear mi primera subasta
+                    {t.myAuctions.createFirstButton}
                   </Button>
                 </Link>
               </>
@@ -322,20 +326,20 @@ export default function MyAuctionsPage() {
               <>
                 <Clock className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-white mb-2">
-                  No tienes subastas activas
+                  {t.myAuctions.noActiveAuctions}
                 </h3>
                 <p className="text-slate-500">
-                  Todas tus subastas han finalizado o aún no has creado ninguna
+                  {t.myAuctions.noActiveDesc}
                 </p>
               </>
             ) : (
               <>
                 <CheckCircle className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-white mb-2">
-                  No tienes subastas finalizadas
+                  {t.myAuctions.noEndedAuctions}
                 </h3>
                 <p className="text-slate-500">
-                  Tus subastas activas aparecerán aquí cuando terminen
+                  {t.myAuctions.noEndedDesc}
                 </p>
               </>
             )}
@@ -347,6 +351,7 @@ export default function MyAuctionsPage() {
                 key={auction.id}
                 auction={auction}
                 onDelete={handleDelete}
+                t={t}
               />
             ))}
           </div>

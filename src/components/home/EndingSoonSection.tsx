@@ -7,6 +7,7 @@ import { Button } from "@/components/ui";
 import { getEndingSoonAuctions } from "@/services/auction.service";
 import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
+import { useLanguage } from "@/i18n";
 
 const formatPrice = (price: number) => {
   const formatted = new Intl.NumberFormat("es-CL", {
@@ -16,12 +17,12 @@ const formatPrice = (price: number) => {
   return `$${formatted} CLP`;
 };
 
-function formatTimeRemaining(endTime: Timestamp): string {
+function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
   const now = new Date();
   const end = endTime.toDate();
   const diff = end.getTime() - now.getTime();
 
-  if (diff <= 0) return "Finalizada";
+  if (diff <= 0) return endedText;
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -32,8 +33,8 @@ function formatTimeRemaining(endTime: Timestamp): string {
   return `${minutes}m`;
 }
 
-function EndingSoonCard({ auction }: { auction: Auction }) {
-  const timeLeft = formatTimeRemaining(auction.endTime);
+function EndingSoonCard({ auction, t }: { auction: Auction; t: ReturnType<typeof useLanguage>['t'] }) {
+  const timeLeft = formatTimeRemaining(auction.endTime, t.auction.ended);
 
   return (
     <Link href={`/auction/${auction.id}`}>
@@ -52,7 +53,7 @@ function EndingSoonCard({ auction }: { auction: Auction }) {
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">
-              Sin imagen
+              No image
             </div>
           )}
         </div>
@@ -66,13 +67,13 @@ function EndingSoonCard({ auction }: { auction: Auction }) {
 
           <div className="flex items-center justify-between mt-2">
             <div>
-              <p className="text-slate-500 text-xs uppercase">Puja Actual</p>
+              <p className="text-slate-500 text-xs uppercase">{t.auction.currentBid}</p>
               <p className="text-emerald-400 font-bold text-lg">
                 {formatPrice(auction.currentBid)}
               </p>
             </div>
             <Button size="sm" variant="secondary">
-              Pujar
+              {t.auction.placeBid}
             </Button>
           </div>
         </div>
@@ -84,6 +85,7 @@ function EndingSoonCard({ auction }: { auction: Auction }) {
 export function EndingSoonSection() {
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     async function loadAuctions() {
@@ -116,13 +118,13 @@ export function EndingSoonSection() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-            <h2 className="text-2xl font-bold text-white">Terminan Pronto</h2>
+            <h2 className="text-2xl font-bold text-white">{t.home.endingSoon}</h2>
           </div>
           <Link
             href="/search"
             className="text-slate-400 hover:text-white transition-colors text-sm flex items-center gap-1"
           >
-            Ver todas
+            {t.home.viewAll}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -131,13 +133,12 @@ export function EndingSoonSection() {
         {auctions.length === 0 ? (
           <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-8 text-center">
             <Clock className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-400">No hay subastas terminando pronto</p>
-            <p className="text-slate-500 text-sm mt-1">¡Vuelve más tarde o crea una nueva subasta!</p>
+            <p className="text-slate-400">{t.home.noAuctions}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {auctions.map((auction) => (
-              <EndingSoonCard key={auction.id} auction={auction} />
+              <EndingSoonCard key={auction.id} auction={auction} t={t} />
             ))}
           </div>
         )}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, Link as LinkIcon, Check, MessageCircle } from "lucide-react";
+import { useLanguage } from "@/i18n";
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -44,6 +45,7 @@ function TelegramIcon({ className }: { className?: string }) {
 
 export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
+  const { t } = useLanguage();
 
   if (!isOpen) return null;
 
@@ -96,7 +98,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
       <div className="relative bg-slate-900 rounded-2xl border border-slate-800 w-full max-w-md p-6 shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-white">Compartir subasta</h3>
+          <h3 className="text-xl font-semibold text-white">{t.shareModal.title}</h3>
           <button
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"
@@ -108,7 +110,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
         {/* Copiar enlace */}
         <div className="mb-6">
           <label className="block text-sm text-slate-400 mb-2">
-            Enlace de la subasta
+            {t.shareModal.auctionLink}
           </label>
           <div className="flex gap-2">
             <div className="flex-1 min-w-0 flex items-center gap-2 px-3 py-3 bg-slate-800 rounded-xl border border-slate-700 overflow-hidden">
@@ -126,7 +128,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
               {copied ? (
                 <Check className="w-5 h-5" />
               ) : (
-                "Copiar"
+                t.shareModal.copy
               )}
             </button>
           </div>
@@ -135,7 +137,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
         {/* Redes sociales */}
         <div>
           <label className="block text-sm text-slate-400 mb-3">
-            Compartir en redes sociales
+            {t.shareModal.shareOn}
           </label>
           <div className="grid grid-cols-4 gap-3">
             {shareOptions.map((option) => (

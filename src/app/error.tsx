@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { useLanguage } from "@/i18n";
 
 export default function Error({
   error,
@@ -11,6 +12,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t } = useLanguage();
+  
   useEffect(() => {
     console.error("Application error:", error);
   }, [error]);
@@ -25,10 +28,10 @@ export default function Error({
 
         {/* Mensaje */}
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-          ¡Algo salió mal!
+          {t.errors.somethingWentWrong}
         </h1>
         <p className="text-slate-400 mb-8">
-          Ha ocurrido un error inesperado. Por favor, intenta de nuevo o vuelve al inicio.
+          {t.errors.unexpectedError}
         </p>
 
         {/* Detalles del error (solo en desarrollo) */}
@@ -47,14 +50,14 @@ export default function Error({
             className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors cursor-pointer"
           >
             <RefreshCw className="w-5 h-5" />
-            Intentar de nuevo
+            {t.errors.tryAgain}
           </button>
           <Link
             href="/"
             className="inline-flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition-colors"
           >
             <Home className="w-5 h-5" />
-            Ir al inicio
+            {t.errors.goHome}
           </Link>
         </div>
       </div>

@@ -20,32 +20,32 @@ import {
   Auction,
   AuctionCategory,
   AuctionStatus,
-  CATEGORY_LABELS,
 } from "@/types/auction.types";
-
-// Opciones de ordenamiento
-const SORT_OPTIONS = [
-  { value: "endTime-asc", label: "Terminan pronto" },
-  { value: "endTime-desc", label: "Terminan último" },
-  { value: "currentBid-asc", label: "Precio: menor a mayor" },
-  { value: "currentBid-desc", label: "Precio: mayor a menor" },
-  { value: "bidsCount-desc", label: "Más populares" },
-  { value: "createdAt-desc", label: "Más recientes" },
-];
+import { useLanguage } from "@/i18n";
 
 // Rangos de precio en CLP
 const PRICE_RANGES = [
-  { value: "all", label: "Cualquier precio", min: 0, max: Infinity },
-  { value: "0-10000", label: "Hasta $10.000", min: 0, max: 10000 },
-  { value: "10000-50000", label: "$10.000 - $50.000", min: 10000, max: 50000 },
-  { value: "50000-100000", label: "$50.000 - $100.000", min: 50000, max: 100000 },
-  { value: "100000-500000", label: "$100.000 - $500.000", min: 100000, max: 500000 },
-  { value: "500000+", label: "Más de $500.000", min: 500000, max: Infinity },
+  { value: "all", min: 0, max: Infinity },
+  { value: "0-10000", min: 0, max: 10000 },
+  { value: "10000-50000", min: 10000, max: 50000 },
+  { value: "50000-100000", min: 50000, max: 100000 },
+  { value: "100000-500000", min: 100000, max: 500000 },
+  { value: "500000+", min: 500000, max: Infinity },
 ];
+
+const PRICE_RANGE_LABELS: Record<string, { es: string; en: string }> = {
+  "all": { es: "Cualquier precio", en: "Any price" },
+  "0-10000": { es: "Hasta $10.000", en: "Up to $10,000" },
+  "10000-50000": { es: "$10.000 - $50.000", en: "$10,000 - $50,000" },
+  "50000-100000": { es: "$50.000 - $100.000", en: "$50,000 - $100,000" },
+  "100000-500000": { es: "$100.000 - $500.000", en: "$100,000 - $500,000" },
+  "500000+": { es: "Más de $500.000", en: "Over $500,000" },
+};
 
 export default function SearchPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t, language } = useLanguage();
   const initialQuery = searchParams.get("q") || "";
   const initialCategory = searchParams.get("category") as AuctionCategory | null;
 
@@ -55,7 +55,7 @@ export default function SearchPage() {
   // Estados de búsqueda y filtros 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [selectedCategory, setSelectedCategory] = useState<AuctionCategory | "all">(
-    initialCategory && CATEGORY_LABELS[initialCategory] ? initialCategory : "all"
+    initialCategory ? initialCategory : "all"
   );
   const [selectedStatus, setSelectedStatus] = useState<AuctionStatus | "all">("active");
   const [priceRange, setPriceRange] = useState("all");
@@ -103,7 +103,7 @@ export default function SearchPage() {
         (auction) =>
           auction.title.toLowerCase().includes(query) ||
           auction.description?.toLowerCase().includes(query) ||
-          CATEGORY_LABELS[auction.category].toLowerCase().includes(query)
+          t.categories[auction.category as keyof typeof t.categories]?.toLowerCase().includes(query)
       );
     }
 
@@ -161,7 +161,7 @@ export default function SearchPage() {
           className="flex items-center justify-between w-full text-left mb-3"
         >
           <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
-            Categoría
+            {t.search.category}
           </h3>
           {expandedSections.category ? (
             <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -179,19 +179,19 @@ export default function SearchPage() {
                   : "text-slate-300 hover:bg-slate-800"
               }`}
             >
-              Todas las categorías
+              {t.search.allCategories}
             </button>
-            {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+            {Object.keys(t.categories).map((key) => (
               <button
-                key={value}
-                onClick={() => setSelectedCategory(value as AuctionCategory)}
+                key={key}
+                onClick={() => setSelectedCategory(key as AuctionCategory)}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                  selectedCategory === value
+                  selectedCategory === key
                     ? "bg-emerald-600 text-white"
                     : "text-slate-300 hover:bg-slate-800"
                 }`}
               >
-                {label}
+                {t.categories[key as keyof typeof t.categories]}
               </button>
             ))}
           </div>
@@ -205,7 +205,7 @@ export default function SearchPage() {
           className="flex items-center justify-between w-full text-left mb-3"
         >
           <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
-            Estado
+            {t.search.status}
           </h3>
           {expandedSections.status ? (
             <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -216,9 +216,9 @@ export default function SearchPage() {
         {expandedSections.status && (
           <div className="space-y-1">
             {[
-              { value: "all", label: "Todas" },
-              { value: "active", label: "Activas" },
-              { value: "ended", label: "Finalizadas" },
+              { value: "all", label: t.search.allStatus },
+              { value: "active", label: t.myAuctions.active },
+              { value: "ended", label: t.myAuctions.ended },
             ].map((option) => (
               <button
                 key={option.value}
@@ -243,7 +243,7 @@ export default function SearchPage() {
           className="flex items-center justify-between w-full text-left mb-3"
         >
           <h3 className="text-sm font-semibold text-white uppercase tracking-wider">
-            Precio
+            {t.search.priceRange}
           </h3>
           {expandedSections.price ? (
             <ChevronUp className="w-4 h-4 text-slate-400" />
@@ -263,7 +263,7 @@ export default function SearchPage() {
                     : "text-slate-300 hover:bg-slate-800"
                 }`}
               >
-                {range.label}
+                {PRICE_RANGE_LABELS[range.value][language]}
               </button>
             ))}
           </div>
@@ -276,7 +276,7 @@ export default function SearchPage() {
           onClick={clearAllFilters}
           className="w-full py-2 text-sm text-slate-400 hover:text-white transition-colors"
         >
-          Limpiar filtros ({activeFiltersCount})
+          {t.search.clearFilters} ({activeFiltersCount})
         </button>
       )}
     </div>
@@ -297,7 +297,7 @@ export default function SearchPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar subastas..."
+                  placeholder={t.search.placeholder}
                   className="w-full pl-12 pr-12 py-4 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
                   autoFocus
                 />
@@ -317,14 +317,14 @@ export default function SearchPage() {
             <div className="max-w-2xl mx-auto mt-4 flex items-center justify-between">
               <p className="text-slate-400 text-sm">
                 {loading ? (
-                  "Buscando..."
+                  t.common.loading
                 ) : (
                   <>
                     <span className="text-white font-medium">{filteredAuctions.length}</span>
-                    {" "}resultado{filteredAuctions.length !== 1 ? "s" : ""}
+                    {" "}{t.search.results}
                     {searchQuery && (
                       <>
-                        {" "}para "<span className="text-emerald-400">{searchQuery}</span>"
+                        {" "}"<span className="text-emerald-400">{searchQuery}</span>"
                       </>
                     )}
                   </>
@@ -333,17 +333,18 @@ export default function SearchPage() {
 
               {/* Ordenar (desktop) */}
               <div className="hidden md:flex items-center gap-2">
-                <span className="text-slate-500 text-sm">Ordenar:</span>
+                <span className="text-slate-500 text-sm">{t.search.sortBy}:</span>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-500"
                 >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  <option value="endTime-asc">{t.search.endingSoon}</option>
+                  <option value="endTime-desc">{t.search.endingLast}</option>
+                  <option value="currentBid-asc">{t.search.priceLowHigh}</option>
+                  <option value="currentBid-desc">{t.search.priceHighLow}</option>
+                  <option value="bidsCount-desc">{t.search.mostPopular}</option>
+                  <option value="createdAt-desc">{t.search.newest}</option>
                 </select>
               </div>
             </div>
@@ -358,7 +359,7 @@ export default function SearchPage() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold text-white flex items-center gap-2">
                     <SlidersHorizontal className="w-4 h-4" />
-                    Filtros
+                    {t.search.filters}
                   </h2>
                   {activeFiltersCount > 0 && (
                     <span className="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full">
@@ -379,7 +380,7 @@ export default function SearchPage() {
                   className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
                 >
                   <SlidersHorizontal className="w-4 h-4" />
-                  Filtros
+                  {t.search.filters}
                   {activeFiltersCount > 0 && (
                     <span className="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full">
                       {activeFiltersCount}
@@ -393,11 +394,12 @@ export default function SearchPage() {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="flex-1 bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500"
                 >
-                  {SORT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
+                  <option value="endTime-asc">{t.search.endingSoon}</option>
+                  <option value="endTime-desc">{t.search.endingLast}</option>
+                  <option value="currentBid-asc">{t.search.priceLowHigh}</option>
+                  <option value="currentBid-desc">{t.search.priceHighLow}</option>
+                  <option value="bidsCount-desc">{t.search.mostPopular}</option>
+                  <option value="createdAt-desc">{t.search.newest}</option>
                 </select>
               </div>
 
@@ -417,7 +419,7 @@ export default function SearchPage() {
                   )}
                   {selectedCategory !== "all" && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-800 text-white text-sm rounded-full">
-                      {CATEGORY_LABELS[selectedCategory]}
+                      {t.categories[selectedCategory as keyof typeof t.categories]}
                       <button
                         onClick={() => setSelectedCategory("all")}
                         className="hover:text-red-400 transition-colors"
@@ -428,7 +430,7 @@ export default function SearchPage() {
                   )}
                   {priceRange !== "all" && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-800 text-white text-sm rounded-full">
-                      {PRICE_RANGES.find((r) => r.value === priceRange)?.label}
+                      {PRICE_RANGE_LABELS[priceRange][language]}
                       <button
                         onClick={() => setPriceRange("all")}
                         className="hover:text-red-400 transition-colors"
@@ -449,15 +451,15 @@ export default function SearchPage() {
                 <div className="bg-slate-900 border border-slate-800 rounded-xl p-12 text-center">
                   <Gavel className="w-16 h-16 text-slate-600 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-white mb-2">
-                    No se encontraron resultados
+                    {t.search.noResults}
                   </h3>
                   <p className="text-slate-500 mb-6">
                     {searchQuery
-                      ? `No hay subastas que coincidan con "${searchQuery}"`
-                      : "Intenta con otros filtros o términos de búsqueda"}
+                      ? `${t.search.noResults}: "${searchQuery}"`
+                      : t.search.noResults}
                   </p>
                   <Button variant="outline" onClick={clearAllFilters}>
-                    Limpiar filtros
+                    {t.search.clearFilters}
                   </Button>
                 </div>
               ) : (
@@ -481,7 +483,7 @@ export default function SearchPage() {
           />
           <div className="absolute right-0 top-0 bottom-0 w-80 max-w-full bg-slate-900 border-l border-slate-800 p-4 overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="font-semibold text-white text-lg">Filtros</h2>
+              <h2 className="font-semibold text-white text-lg">{t.search.filters}</h2>
               <button
                 onClick={() => setShowMobileFilters(false)}
                 className="p-2 text-slate-400 hover:text-white transition-colors"
@@ -495,7 +497,7 @@ export default function SearchPage() {
                 className="w-full"
                 onClick={() => setShowMobileFilters(false)}
               >
-                Ver {filteredAuctions.length} resultados
+                {filteredAuctions.length} {t.search.results}
               </Button>
             </div>
           </div>

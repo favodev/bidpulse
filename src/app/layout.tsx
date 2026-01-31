@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/hooks/useAuth";
+import { LanguageProvider } from "@/i18n";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,6 +18,11 @@ export const metadata: Metadata = {
   title: "BidPulse",
   description: "Subastas en tiempo real de alto rendimiento con BidPulse. Puja, compite y gana.",
   keywords: ["subastas", "tiempo real", "pujas", "subastas online"],
+  icons: {
+    icon: "/assets/logo.png",
+    shortcut: "/assets/logo.png",
+    apple: "/assets/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -29,7 +35,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

@@ -5,6 +5,7 @@ import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-im
 import "react-image-crop/dist/ReactCrop.css";
 import { X, RotateCw, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui";
+import { useLanguage } from "@/i18n";
 
 interface ImageCropperProps {
   imageSrc: string;
@@ -34,6 +35,7 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel, isUploading }
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [rotation, setRotation] = useState(0);
+  const { t } = useLanguage();
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
@@ -114,7 +116,7 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel, isUploading }
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
       <div className="bg-slate-900 rounded-2xl max-w-lg w-full p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">Recortar imagen</h3>
+          <h3 className="text-lg font-semibold text-white">{t.common.cropImage}</h3>
           <button
             onClick={onCancel}
             className="p-2 text-gray-400 hover:text-white transition-colors cursor-pointer"
@@ -152,12 +154,12 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel, isUploading }
             disabled={isUploading}
           >
             <RotateCw className="w-4 h-4" />
-            Rotar
+            {t.common.rotate}
           </button>
 
           <div className="flex gap-2">
             <Button variant="ghost" onClick={onCancel} disabled={isUploading}>
-              Cancelar
+              {t.common.cancel}
             </Button>
             <Button onClick={handleConfirm} disabled={isUploading}>
               {isUploading ? (
@@ -165,7 +167,7 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel, isUploading }
               ) : (
                 <>
                   <Check className="w-4 h-4 mr-2" />
-                  Confirmar
+                  {t.common.confirm}
                 </>
               )}
             </Button>

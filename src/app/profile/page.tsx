@@ -11,10 +11,11 @@ import {
   FileText,
   ArrowLeft,
 } from "lucide-react";
-import { Navbar } from "@/components/layout";
+import { Navbar, Footer } from "@/components/layout";
 import { Button, Alert } from "@/components/ui";
 import { ImageCropper } from "@/components/ui/ImageCropper";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/i18n";
 import {
   getUserProfile,
   createUserProfile,
@@ -26,6 +27,7 @@ import { UserProfile } from "@/types/user.types";
 export default function ProfilePage() {
   const router = useRouter();
   const { user, refreshUser } = useAuth();
+  const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -70,14 +72,14 @@ export default function ProfilePage() {
         }
       } catch (err) {
         console.error(err);
-        setError("Error al cargar el perfil");
+        setError(t.profile.errorLoading);
       } finally {
         setLoading(false);
       }
     }
 
     loadProfile();
-  }, [user]);
+  }, [user, t]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -110,10 +112,10 @@ export default function ProfilePage() {
       });
 
       refreshUser();
-      setSuccess("Perfil actualizado correctamente");
+      setSuccess(t.profile.successMessage);
     } catch (err) {
       console.error(err);
-      setError("Error al guardar los cambios");
+      setError(t.profile.errorSaving);
     } finally {
       setSaving(false);
     }
@@ -129,13 +131,13 @@ export default function ProfilePage() {
 
     // Validar tipo de archivo
     if (!file.type.startsWith("image/")) {
-      setError("Por favor selecciona una imagen válida");
+      setError(t.profile.errorImage);
       return;
     }
 
     // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setError("La imagen no puede pesar más de 5MB");
+      setError(t.profile.errorImageSize);
       return;
     }
 
@@ -177,8 +179,8 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-slate-950">
         <Navbar />
         <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] gap-4">
-          <p className="text-gray-400 text-lg">Debes iniciar sesión para ver tu perfil</p>
-          <Button onClick={() => router.push("/login")}>Iniciar sesión</Button>
+          <p className="text-gray-400 text-lg">{t.profile.mustLogin}</p>
+          <Button onClick={() => router.push("/login")}>{t.profile.loginButton}</Button>
         </div>
       </div>
     );
@@ -196,21 +198,21 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
       <Navbar />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Navegación */}
         <button
           onClick={() => router.back()}
           className="text-gray-400 hover:text-white flex items-center gap-2 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver
+          {t.profile.back}
         </button>
 
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-8">
-          Editar Perfil
+          {t.profile.title}
         </h1>
 
         {error && <Alert variant="error" message={error} className="mb-6" />}
@@ -252,17 +254,17 @@ export default function ProfilePage() {
 
           {previewAvatar ? (
             <div className="flex flex-col items-center gap-2 mt-2">
-              <p className="text-emerald-400 text-sm">✓ Nueva foto lista</p>
+              <p className="text-emerald-400 text-sm">{t.profile.newPhotoReady}</p>
               <button
                 onClick={handleCancelPendingAvatar}
                 className="text-gray-500 text-xs hover:text-gray-300 transition-colors cursor-pointer"
               >
-                Descartar cambio
+                {t.profile.discardChange}
               </button>
             </div>
           ) : (
             <p className="text-gray-500 text-sm mt-2">
-              Haz clic para cambiar tu foto
+              {t.profile.changePhoto}
             </p>
           )}
         </div>
@@ -271,7 +273,7 @@ export default function ProfilePage() {
         <div className="bg-slate-900 rounded-2xl p-6 space-y-6">
           <h2 className="text-lg font-semibold text-white flex items-center gap-2">
             <User className="w-5 h-5 text-emerald-500" />
-            Información personal
+            {t.profile.personalInfo}
           </h2>
 
           <div className="space-y-4">
@@ -279,7 +281,7 @@ export default function ProfilePage() {
             <div>
               <label className="flex text-sm font-medium text-gray-400 mb-2 items-center gap-2">
                 <Mail className="w-4 h-4" />
-                Correo electrónico
+                {t.profile.email}
               </label>
               <div className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-gray-400">
                 {user.email}
@@ -290,13 +292,13 @@ export default function ProfilePage() {
             <div>
               <label className="flex text-sm font-medium text-gray-300 mb-2 items-center gap-2">
                 <User className="w-4 h-4" />
-                Nombre para mostrar
+                {t.profile.displayName}
               </label>
               <input
                 name="displayName"
                 value={formData.displayName}
                 onChange={handleChange}
-                placeholder="Tu nombre"
+                placeholder={t.profile.displayNamePlaceholder}
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -305,14 +307,14 @@ export default function ProfilePage() {
             <div>
               <label className="flex text-sm font-medium text-gray-300 mb-2 items-center gap-2">
                 <FileText className="w-4 h-4" />
-                Biografía
+                {t.profile.bio}
               </label>
               <textarea
                 name="bio"
                 value={formData.bio}
                 onChange={handleChange}
                 rows={3}
-                placeholder="Cuéntanos sobre ti..."
+                placeholder={t.profile.bioPlaceholder}
                 className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
               />
             </div>
@@ -325,7 +327,7 @@ export default function ProfilePage() {
             ) : (
               <>
                 <Save className="w-5 h-5 mr-2" />
-                Guardar cambios
+                {t.profile.save}
               </>
             )}
           </Button>
@@ -341,6 +343,8 @@ export default function ProfilePage() {
           isUploading={false}
         />
       )}
+
+      <Footer />
     </div>
   );
 }

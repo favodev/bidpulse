@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/i18n";
 import { Input, Button, Logo, Alert } from "@/components/ui";
 
 interface FormErrors {
@@ -11,19 +12,19 @@ interface FormErrors {
   password?: string;
 }
 
-function validateForm(email: string, password: string): FormErrors {
+function validateForm(email: string, password: string, t: ReturnType<typeof useLanguage>['t']): FormErrors {
   const errors: FormErrors = {};
 
   if (!email) {
-    errors.email = "El correo electrónico es requerido.";
+    errors.email = t.auth.emailRequired;
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    errors.email = "Ingresa un correo electrónico válido.";
+    errors.email = t.auth.emailInvalid;
   }
 
   if (!password) {
-    errors.password = "La contraseña es requerida.";
+    errors.password = t.auth.passwordRequired;
   } else if (password.length < 6) {
-    errors.password = "La contraseña debe tener al menos 6 caracteres.";
+    errors.password = t.auth.passwordMinLength;
   }
 
   return errors;
@@ -55,6 +56,7 @@ function GoogleIcon() {
 export default function LoginPage() {
   const router = useRouter();
   const { login, loginWithGoogle, error, clearError, loading } = useAuth();
+  const { t } = useLanguage();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -66,7 +68,7 @@ export default function LoginPage() {
     clearError();
 
     // Validar formulario
-    const errors = validateForm(email, password);
+    const errors = validateForm(email, password, t);
     setFormErrors(errors);
 
     if (Object.keys(errors).length > 0) {
@@ -107,9 +109,9 @@ export default function LoginPage() {
 
         {/* Título y descripción */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Bienvenido de nuevo</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">{t.auth.welcomeBack}</h1>
           <p className="text-slate-400">
-            Ingresa tus credenciales para acceder a subastas en tiempo real.
+            {t.auth.welcomeBackSubtitle}
           </p>
         </div>
 
@@ -129,8 +131,8 @@ export default function LoginPage() {
             {/* Campo de correo */}
             <Input
               type="email"
-              label="Correo electrónico"
-              placeholder="nombre@ejemplo.com"
+              label={t.auth.email}
+              placeholder={t.auth.emailPlaceholder}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -147,18 +149,18 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-sm font-medium text-gray-200">
-                  Contraseña
+                  {t.auth.password}
                 </label>
                 <Link
                   href="/forgot-password"
                   className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
                 >
-                  ¿Olvidaste tu contraseña?
+                  {t.auth.forgotPassword}
                 </Link>
               </div>
               <Input
                 type="password"
-                placeholder="Ingresa tu contraseña"
+                placeholder={t.auth.passwordPlaceholder}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -179,7 +181,7 @@ export default function LoginPage() {
               size="lg"
               isLoading={isSubmitting || loading}
             >
-              Iniciar Sesión
+              {t.auth.loginButton}
             </Button>
           </form>
 
@@ -190,7 +192,7 @@ export default function LoginPage() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-4 bg-slate-900/50 text-slate-500">
-                O continúa con
+                {t.auth.orContinueWith}
               </span>
             </div>
           </div>
@@ -205,28 +207,28 @@ export default function LoginPage() {
             onClick={handleGoogleLogin}
             disabled={isSubmitting}
           >
-            Continuar con Google
+            {t.auth.loginWithGoogle}
           </Button>
         </div>
 
         {/* Enlace a registro */}
         <p className="text-center mt-6 text-slate-400">
-          ¿No tienes una cuenta?{" "}
+          {t.auth.noAccount}{" "}
           <Link
             href="/signup"
             className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
           >
-            Regístrate
+            {t.auth.register}
           </Link>
         </p>
 
         {/* Enlaces legales */}
         <div className="flex justify-center gap-6 mt-6 text-sm text-slate-500">
           <Link href="/privacy" className="hover:text-slate-400 transition-colors">
-            Política de Privacidad
+            {t.auth.privacyPolicy}
           </Link>
           <Link href="/terms" className="hover:text-slate-400 transition-colors">
-            Términos de Servicio
+            {t.auth.termsOfService}
           </Link>
         </div>
       </div>

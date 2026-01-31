@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/i18n";
 import { Input, Button, Logo, Alert } from "@/components/ui";
 import { Check, X } from "lucide-react";
 
@@ -21,31 +22,31 @@ interface FormData {
   confirmPassword: string;
 }
 
-function validateForm(data: FormData): FormErrors {
+function validateForm(data: FormData, t: ReturnType<typeof useLanguage>['t']): FormErrors {
   const errors: FormErrors = {};
 
   if (!data.displayName) {
-    errors.displayName = "El nombre es requerido.";
+    errors.displayName = t.auth.nameRequired;
   } else if (data.displayName.length < 2) {
-    errors.displayName = "El nombre debe tener al menos 2 caracteres.";
+    errors.displayName = t.auth.nameMinLength;
   }
 
   if (!data.email) {
-    errors.email = "El correo electrónico es requerido.";
+    errors.email = t.auth.emailRequired;
   } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
-    errors.email = "Ingresa un correo electrónico válido.";
+    errors.email = t.auth.emailInvalid;
   }
 
   if (!data.password) {
-    errors.password = "La contraseña es requerida.";
+    errors.password = t.auth.passwordRequired;
   } else if (data.password.length < 6) {
-    errors.password = "La contraseña debe tener al menos 6 caracteres.";
+    errors.password = t.auth.passwordMinLength;
   }
 
   if (!data.confirmPassword) {
-    errors.confirmPassword = "Confirma tu contraseña.";
+    errors.confirmPassword = t.auth.confirmPasswordRequired;
   } else if (data.password !== data.confirmPassword) {
-    errors.confirmPassword = "Las contraseñas no coinciden.";
+    errors.confirmPassword = t.auth.passwordsNotMatch;
   }
 
   return errors;
@@ -56,17 +57,17 @@ interface PasswordRequirement {
   met: boolean;
 }
 
-function getPasswordRequirements(password: string): PasswordRequirement[] {
+function getPasswordRequirements(password: string, t: ReturnType<typeof useLanguage>['t']): PasswordRequirement[] {
   return [
-    { label: "Al menos 6 caracteres", met: password.length >= 6 },
-    { label: "Una letra mayúscula", met: /[A-Z]/.test(password) },
-    { label: "Una letra minúscula", met: /[a-z]/.test(password) },
-    { label: "Un número", met: /\d/.test(password) },
+    { label: t.auth.atLeast6Chars, met: password.length >= 6 },
+    { label: t.auth.oneUppercase, met: /[A-Z]/.test(password) },
+    { label: t.auth.oneLowercase, met: /[a-z]/.test(password) },
+    { label: t.auth.oneNumber, met: /\d/.test(password) },
   ];
 }
 
-function PasswordStrengthIndicator({ password }: { password: string }) {
-  const requirements = getPasswordRequirements(password);
+function PasswordStrengthIndicator({ password, t }: { password: string; t: ReturnType<typeof useLanguage>['t'] }) {
+  const requirements = getPasswordRequirements(password, t);
   const metCount = requirements.filter((r) => r.met).length;
 
   const strengthColors = [
@@ -140,6 +141,7 @@ function GoogleIcon() {
 export default function SignupPage() {
   const router = useRouter();
   const { signup, loginWithGoogle, error, clearError, loading } = useAuth();
+  const { t } = useLanguage();
 
   const [formData, setFormData] = useState<FormData>({
     displayName: "",
@@ -163,7 +165,7 @@ export default function SignupPage() {
     clearError();
 
     // Validar formulario
-    const errors = validateForm(formData);
+    const errors = validateForm(formData, t);
     setFormErrors(errors);
 
     if (Object.keys(errors).length > 0) {
@@ -212,9 +214,9 @@ export default function SignupPage() {
 
         {/* Título y descripción */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Crear una cuenta</h1>
+          <h1 className="text-3xl font-bold text-white mb-2">{t.auth.createAccount}</h1>
           <p className="text-slate-400">
-            Únete a BidPulse y empieza a pujar en subastas en tiempo real.
+            {t.auth.createAccountSubtitle}
           </p>
         </div>
 
@@ -234,8 +236,8 @@ export default function SignupPage() {
             {/* Campo de nombre */}
             <Input
               type="text"
-              label="Nombre completo"
-              placeholder="Juan Pérez"
+              label={t.auth.displayName}
+              placeholder={t.auth.displayNamePlaceholder}
               value={formData.displayName}
               onChange={(e) => updateField("displayName", e.target.value)}
               error={formErrors.displayName}
@@ -246,8 +248,8 @@ export default function SignupPage() {
             {/* Campo de correo */}
             <Input
               type="email"
-              label="Correo electrónico"
-              placeholder="nombre@ejemplo.com"
+              label={t.auth.email}
+              placeholder={t.auth.emailPlaceholder}
               value={formData.email}
               onChange={(e) => updateField("email", e.target.value)}
               error={formErrors.email}
@@ -259,22 +261,22 @@ export default function SignupPage() {
             <div>
               <Input
                 type="password"
-                label="Contraseña"
-                placeholder="Crea una contraseña segura"
+                label={t.auth.password}
+                placeholder={t.auth.createPasswordSecure}
                 value={formData.password}
                 onChange={(e) => updateField("password", e.target.value)}
                 error={formErrors.password}
                 autoComplete="new-password"
                 disabled={isSubmitting}
               />
-              <PasswordStrengthIndicator password={formData.password} />
+              <PasswordStrengthIndicator password={formData.password} t={t} />
             </div>
 
             {/* Confirmar contraseña */}
             <Input
               type="password"
-              label="Confirmar contraseña"
-              placeholder="Confirma tu contraseña"
+              label={t.auth.confirmPassword}
+              placeholder={t.auth.confirmPasswordPlaceholder}
               value={formData.confirmPassword}
               onChange={(e) => updateField("confirmPassword", e.target.value)}
               error={formErrors.confirmPassword}
@@ -292,19 +294,19 @@ export default function SignupPage() {
                 className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-800 text-blue-600 focus:ring-blue-500 focus:ring-offset-slate-900"
               />
               <label htmlFor="terms" className="text-sm text-slate-400">
-                Acepto los{" "}
+                {t.auth.termsAgree}{" "}
                 <Link
                   href="/terms"
                   className="text-blue-400 hover:text-blue-300 transition-colors"
                 >
-                  Términos de Servicio
+                  {t.auth.termsOfService}
                 </Link>{" "}
-                y la{" "}
+                {t.auth.and}{" "}
                 <Link
                   href="/privacy"
                   className="text-blue-400 hover:text-blue-300 transition-colors"
                 >
-                  Política de Privacidad
+                  {t.auth.privacyPolicy}
                 </Link>
               </label>
             </div>
@@ -317,7 +319,7 @@ export default function SignupPage() {
               isLoading={isSubmitting || loading}
               disabled={!acceptTerms}
             >
-              Crear Cuenta
+              {t.auth.signupButton}
             </Button>
           </form>
 
@@ -328,7 +330,7 @@ export default function SignupPage() {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-4 bg-slate-900/50 text-slate-500">
-                O continúa con
+                {t.auth.orContinueWith}
               </span>
             </div>
           </div>
@@ -343,28 +345,28 @@ export default function SignupPage() {
             onClick={handleGoogleSignup}
             disabled={isSubmitting}
           >
-            Continuar con Google
+            {t.auth.loginWithGoogle}
           </Button>
         </div>
 
         {/* Enlace a login */}
         <p className="text-center mt-6 text-slate-400">
-          ¿Ya tienes una cuenta?{" "}
+          {t.auth.hasAccount}{" "}
           <Link
             href="/login"
             className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
           >
-            Iniciar Sesión
+            {t.auth.login}
           </Link>
         </p>
 
         {/* Enlaces legales */}
         <div className="flex justify-center gap-6 mt-6 text-sm text-slate-500">
           <Link href="/privacy" className="hover:text-slate-400 transition-colors">
-            Política de Privacidad
+            {t.auth.privacyPolicy}
           </Link>
           <Link href="/terms" className="hover:text-slate-400 transition-colors">
-            Términos de Servicio
+            {t.auth.termsOfService}
           </Link>
         </div>
       </div>

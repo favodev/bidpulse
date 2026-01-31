@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Gavel, Loader2, TrendingUp } from "lucide-react";
 import { Auction } from "@/types/auction.types";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/i18n";
 import { placeBid, calculateMinBid, formatBidAmount } from "@/services/bid.service";
 import { Alert } from "@/components/ui";
 
@@ -13,6 +14,7 @@ interface BidFormProps {
 
 export default function BidForm({ auction }: BidFormProps) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [bidAmount, setBidAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,13 +33,13 @@ export default function BidForm({ auction }: BidFormProps) {
     setSuccess("");
 
     if (!user) {
-      setError("Debes iniciar sesión para pujar");
+      setError(t.auction.mustLogin);
       return;
     }
 
     const amount = parseFloat(bidAmount);
     if (isNaN(amount) || amount < minBid) {
-      setError(`La puja mínima es ${formatBidAmount(minBid)}`);
+      setError(`${t.auction.minBid}: ${formatBidAmount(minBid)}`);
       return;
     }
 
@@ -53,11 +55,11 @@ export default function BidForm({ auction }: BidFormProps) {
     setLoading(false);
 
     if (result.success) {
-      setSuccess("¡Puja realizada con éxito!");
+      setSuccess(t.auction.bidSuccess);
       setBidAmount("");
       
       if (result.timeExtended) {
-        setSuccess("¡Puja realizada! Se extendió el tiempo de la subasta.");
+        setSuccess(t.auction.bidSuccessExtended);
       }
     } else {
       setError(result.error?.message || "Error al realizar la puja");
@@ -74,10 +76,10 @@ export default function BidForm({ auction }: BidFormProps) {
   if (isAuctionEnded) {
     return (
       <div className="bg-slate-900 rounded-2xl p-6 text-center">
-        <p className="text-gray-400">Esta subasta ha finalizado</p>
+        <p className="text-gray-400">{t.auction.auctionEnded}</p>
         {auction.winnerName && (
           <p className="text-white mt-2">
-            Ganador: <span className="text-emerald-400">{auction.winnerName}</span>
+            {t.auction.winner}: <span className="text-emerald-400">{auction.winnerName}</span>
           </p>
         )}
       </div>
@@ -87,7 +89,7 @@ export default function BidForm({ auction }: BidFormProps) {
   if (isSeller) {
     return (
       <div className="bg-slate-900 rounded-2xl p-6 text-center">
-        <p className="text-gray-400">No puedes pujar en tu propia subasta</p>
+        <p className="text-gray-400">{t.auction.cannotBidOwn}</p>
       </div>
     );
   }
@@ -99,7 +101,7 @@ export default function BidForm({ auction }: BidFormProps) {
 
       {/* Pujas rápidas */}
       <div>
-        <p className="text-gray-400 text-sm mb-2">Pujas rápidas</p>
+        <p className="text-gray-400 text-sm mb-2">{t.auction.quickBids}</p>
         <div className="flex gap-2 flex-wrap">
           {suggestedBids.map((amount) => (
             <button
@@ -117,7 +119,7 @@ export default function BidForm({ auction }: BidFormProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="text-gray-400 text-sm block mb-2">
-            Tu puja (mínimo: {formatBidAmount(minBid)})
+            {t.auction.yourBid} ({t.auction.minBid}: {formatBidAmount(minBid)})
           </label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
@@ -146,7 +148,7 @@ export default function BidForm({ auction }: BidFormProps) {
           ) : (
             <>
               <Gavel className="w-5 h-5" />
-              Realizar puja
+              {t.auction.placeBid}
             </>
           )}
         </button>
@@ -154,9 +156,9 @@ export default function BidForm({ auction }: BidFormProps) {
         {!user && (
           <p className="text-center text-gray-400 text-sm">
             <a href="/login" className="text-emerald-500 hover:underline">
-              Inicia sesión
+              {t.nav.login}
             </a>{" "}
-            para pujar
+            {t.auction.mustLogin.toLowerCase().includes("log") ? "to bid" : "para pujar"}
           </p>
         )}
       </form>

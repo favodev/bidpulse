@@ -3,17 +3,19 @@
 import { useState } from "react";
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/i18n";
 
 const trendingTags = [
   "iPhone",
   "PlayStation",
-  "Relojes",
-  "Zapatillas",
-  "Vinilos",
+  "Watches",
+  "Sneakers",
+  "Vinyl",
 ];
 
 export function HeroSection() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
@@ -45,17 +47,15 @@ export function HeroSection() {
       <div className="relative z-10 max-w-4xl mx-auto px-4 text-center">
         {/* Título principal */}
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4">
-          Experimenta la Emoción de la
+          {t.home.heroTitle}
           <span className="block text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-emerald-600 mt-2">
-            Puja en Vivo
+            {t.home.heroTitleHighlight}
           </span>
         </h1>
 
         {/* Descripción */}
         <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-10">
-          Únete al marketplace de artículos únicos con mayor crecimiento.
-          <br className="hidden sm:block" />
-          Asegura tu legado con subastas en tiempo real.
+          {t.home.heroSubtitle}
         </p>
 
         {/* Barra de búsqueda */}
@@ -66,14 +66,14 @@ export function HeroSection() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar relojes, arte, electrónica..."
+              placeholder={t.search.placeholder}
               className="w-full pl-12 pr-28 py-4 bg-slate-800/80 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
             />
             <button
               type="submit"
               className="absolute right-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors"
             >
-              Buscar
+              {t.home.heroCta}
             </button>
           </div>
         </form>

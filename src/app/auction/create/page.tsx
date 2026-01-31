@@ -3,11 +3,12 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, X } from "lucide-react";
-import { Navbar } from "@/components/layout";
+import { Navbar, Footer } from "@/components/layout";
 import { Input, Button, Alert } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/i18n";
 import { createAuction } from "@/services/auction.service";
-import { AuctionCategory, CATEGORY_LABELS } from "@/types/auction.types";
+import { AuctionCategory } from "@/types/auction.types";
 
 // Comprimir imagen a Base64
 async function compressImage(file: File, maxWidth: number = 800): Promise<string> {
@@ -37,6 +38,7 @@ async function compressImage(file: File, maxWidth: number = 800): Promise<string
 export default function CreateAuctionPage() {
   const router = useRouter();
   const { user, userAvatar } = useAuth();
+  const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(false);
@@ -112,17 +114,17 @@ export default function CreateAuctionPage() {
     setSuccess("");
 
     if (!user) {
-      setError("Debes iniciar sesión para crear una subasta");
+      setError(t.createAuction.mustLogin);
       return;
     }
 
     if (!formData.title || !formData.startingPrice) {
-      setError("Completa los campos obligatorios");
+      setError(t.createAuction.fillRequired);
       return;
     }
 
     if (formData.images.length === 0) {
-      setError("Debes agregar al menos una imagen");
+      setError(t.createAuction.addOneImage);
       return;
     }
 
@@ -149,14 +151,14 @@ export default function CreateAuctionPage() {
         userAvatar || undefined
       );
 
-      setSuccess("¡Subasta creada exitosamente!");
+      setSuccess(t.createAuction.success);
       
       setTimeout(() => {
         router.push(`/auction/${auctionId}`);
       }, 1500);
     } catch (err) {
       console.error(err);
-      setError("Error al crear la subasta. Intenta nuevamente.");
+      setError(t.createAuction.error);
     } finally {
       setLoading(false);
     }
@@ -167,20 +169,20 @@ export default function CreateAuctionPage() {
       <div className="min-h-screen bg-slate-950">
         <Navbar />
         <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] gap-4">
-          <p className="text-gray-400 text-lg">Debes iniciar sesión para crear una subasta</p>
-          <Button onClick={() => router.push("/login")}>Iniciar sesión</Button>
+          <p className="text-gray-400 text-lg">{t.createAuction.mustLogin}</p>
+          <Button onClick={() => router.push("/login")}>{t.nav.login}</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
       <Navbar />
 
-      <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-8">
-          Crear nueva subasta
+          {t.createAuction.title}
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -189,24 +191,24 @@ export default function CreateAuctionPage() {
 
           {/* Título */}
           <Input
-            label="Título del artículo *"
+            label={`${t.createAuction.auctionTitle} *`}
             name="title"
             value={formData.title}
             onChange={handleChange}
-            placeholder="Ej: Rolex Submariner 2024"
+            placeholder={t.createAuction.auctionTitlePlaceholder}
           />
 
           {/* Descripción */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Descripción
+              {t.createAuction.description}
             </label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
               rows={4}
-              placeholder="Describe tu artículo en detalle..."
+              placeholder={t.createAuction.descriptionPlaceholder}
               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
             />
           </div>
@@ -214,7 +216,7 @@ export default function CreateAuctionPage() {
           {/* Categoría */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Categoría
+              {t.createAuction.category}
             </label>
             <select
               name="category"
@@ -222,9 +224,9 @@ export default function CreateAuctionPage() {
               onChange={handleChange}
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
             >
-              {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
+              {Object.keys(t.categories).map((key) => (
+                <option key={key} value={key}>
+                  {t.categories[key as keyof typeof t.categories]}
                 </option>
               ))}
             </select>
@@ -233,7 +235,7 @@ export default function CreateAuctionPage() {
           {/* Precios */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Precio inicial *"
+              label={`${t.createAuction.startingPrice} *`}
               name="startingPrice"
               type="number"
               step="0.01"
@@ -243,7 +245,7 @@ export default function CreateAuctionPage() {
               placeholder="100.00"
             />
             <Input
-              label="Precio reserva (opcional)"
+              label={t.createAuction.reservePrice}
               name="reservePrice"
               type="number"
               step="0.01"
@@ -256,7 +258,7 @@ export default function CreateAuctionPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Incremento mínimo"
+              label={t.createAuction.bidIncrement}
               name="bidIncrement"
               type="number"
               step="0.01"
@@ -266,7 +268,7 @@ export default function CreateAuctionPage() {
             />
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Duración
+                {t.createAuction.duration}
               </label>
               <select
                 name="duration"
@@ -274,11 +276,11 @@ export default function CreateAuctionPage() {
                 onChange={handleChange}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
               >
-                <option value="1">1 día</option>
-                <option value="3">3 días</option>
-                <option value="5">5 días</option>
-                <option value="7">7 días</option>
-                <option value="14">14 días</option>
+                <option value="1">1 {t.createAuction.day}</option>
+                <option value="3">3 {t.createAuction.days}</option>
+                <option value="5">5 {t.createAuction.days}</option>
+                <option value="7">7 {t.createAuction.days}</option>
+                <option value="14">14 {t.createAuction.days}</option>
               </select>
             </div>
           </div>
@@ -286,7 +288,7 @@ export default function CreateAuctionPage() {
           {/* Imágenes */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Imágenes (máximo 5)
+              {t.createAuction.images} ({t.createAuction.imagesHint})
             </label>
 
             {/* Imágenes seleccionadas */}
@@ -330,10 +332,10 @@ export default function CreateAuctionPage() {
                   <>
                     <ImagePlus className="w-8 h-8 text-gray-500 mx-auto mb-2" />
                     <p className="text-gray-400 text-sm">
-                      Clic para subir imágenes
+                      {t.createAuction.addImages}
                     </p>
                     <p className="text-gray-600 text-xs mt-1">
-                      JPG, PNG hasta 10MB
+                      {t.createAuction.imageFormat}
                     </p>
                   </>
                 )}
@@ -346,11 +348,13 @@ export default function CreateAuctionPage() {
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin mx-auto" />
             ) : (
-              "Crear subasta"
+              t.createAuction.create
             )}
           </Button>
         </form>
       </main>
+
+      <Footer />
     </div>
   );
 }

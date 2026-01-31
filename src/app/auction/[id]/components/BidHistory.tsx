@@ -2,6 +2,7 @@
 
 import { Trophy, User } from "lucide-react";
 import { Bid } from "@/types/bid.types";
+import { useLanguage } from "@/i18n";
 import { formatBidAmount } from "@/services/bid.service";
 
 interface BidHistoryProps {
@@ -10,11 +11,13 @@ interface BidHistoryProps {
 }
 
 export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
+  const { t, language } = useLanguage();
+
   if (bids.length === 0) {
     return (
       <div className="bg-slate-900 rounded-2xl p-8 text-center">
         <p className="text-gray-400">
-          Aún no hay pujas. ¡Sé el primero en pujar!
+          {t.auction.noBidsFirst}
         </p>
       </div>
     );
@@ -23,7 +26,7 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
   const formatTime = (timestamp: { toDate: () => Date } | null) => {
     if (!timestamp) return "";
     const date = timestamp.toDate();
-    return new Intl.DateTimeFormat("es-MX", {
+    return new Intl.DateTimeFormat(language === "es" ? "es-MX" : "en-US", {
       hour: "2-digit",
       minute: "2-digit",
       day: "2-digit",
@@ -35,7 +38,7 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
     <div className="bg-slate-900 rounded-2xl p-6">
       <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
         <Trophy className="w-5 h-5 text-emerald-500" />
-        Historial de pujas
+        {t.auction.bidHistory}
       </h2>
 
       <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -79,10 +82,10 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
                       isCurrentUser ? "text-emerald-400" : "text-white"
                     }`}
                   >
-                    {isCurrentUser ? "Tú" : bid.bidderName}
+                    {isCurrentUser ? t.auction.you : bid.bidderName}
                     {isWinning && (
                       <span className="ml-2 text-xs text-emerald-400">
-                        Puja más alta
+                        {t.auction.highestBid}
                       </span>
                     )}
                   </p>

@@ -8,7 +8,8 @@ import { Footer } from "@/components/layout";
 import { Input, Button, Alert } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { getAuction, updateAuction } from "@/services/auction.service";
-import { Auction, AuctionCategory, CATEGORY_LABELS } from "@/types/auction.types";
+import { Auction, AuctionCategory } from "@/types/auction.types";
+import { useLanguage } from "@/i18n";
 
 // Comprimir imagen a Base64
 async function compressImage(file: File, maxWidth: number = 800): Promise<string> {
@@ -40,6 +41,7 @@ export default function EditAuctionPage() {
   const params = useParams();
   const auctionId = params.id as string;
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [auction, setAuction] = useState<Auction | null>(null);
@@ -64,19 +66,19 @@ export default function EditAuctionPage() {
       try {
         const data = await getAuction(auctionId);
         if (!data) {
-          setError("Subasta no encontrada");
+          setError(t.editAuction.notFound);
           return;
         }
         
         // Verificar que el usuario es el dueño
         if (data.sellerId !== user?.uid) {
-          setError("No tienes permiso para editar esta subasta");
+          setError(t.editAuction.noPermission);
           return;
         }
 
         // Verificar que no ha terminado
         if (data.status === "ended" || data.endTime.toDate() < new Date()) {
-          setError("No puedes editar una subasta finalizada");
+          setError(t.editAuction.cannotEditEnded);
           return;
         }
 
@@ -91,7 +93,7 @@ export default function EditAuctionPage() {
         });
       } catch (err) {
         console.error(err);
-        setError("Error al cargar la subasta");
+        setError(t.editAuction.errorLoading);
       } finally {
         setLoadingAuction(false);
       }
@@ -123,7 +125,7 @@ export default function EditAuctionPage() {
         
         if (!file.type.startsWith("image/")) continue;
         if (file.size > 10 * 1024 * 1024) {
-          setError("Las imágenes no pueden pesar más de 10MB");
+          setError(t.editAuction.errorImageSize);
           continue;
         }
         
@@ -137,7 +139,7 @@ export default function EditAuctionPage() {
       });
     } catch (err) {
       console.error(err);
-      setError("Error al procesar las imágenes");
+      setError(t.editAuction.errorImages);
     } finally {
       setUploadingImages(false);
       if (fileInputRef.current) {
@@ -159,17 +161,17 @@ export default function EditAuctionPage() {
     setSuccess("");
 
     if (!user || !auction) {
-      setError("Error de autenticación");
+      setError(t.editAuction.errorAuth);
       return;
     }
 
     if (!formData.title) {
-      setError("El título es obligatorio");
+      setError(t.editAuction.titleRequired);
       return;
     }
 
     if (formData.images.length === 0) {
-      setError("Debes tener al menos una imagen");
+      setError(t.editAuction.imageRequired);
       return;
     }
 
@@ -185,14 +187,14 @@ export default function EditAuctionPage() {
         bidIncrement: parseFloat(formData.bidIncrement),
       });
 
-      setSuccess("¡Subasta actualizada exitosamente!");
+      setSuccess(t.editAuction.success);
       
       setTimeout(() => {
         router.push(`/auction/${auctionId}`);
       }, 1500);
     } catch (err) {
       console.error(err);
-      setError("Error al actualizar la subasta. Intenta nuevamente.");
+      setError(t.editAuction.error);
     } finally {
       setLoading(false);
     }
@@ -203,8 +205,8 @@ export default function EditAuctionPage() {
       <div className="min-h-screen bg-slate-950">
         <Navbar />
         <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] gap-4">
-          <p className="text-gray-400 text-lg">Debes iniciar sesión</p>
-          <Button onClick={() => router.push("/login")}>Iniciar sesión</Button>
+          <p className="text-gray-400 text-lg">{t.editAuction.mustLogin}</p>
+          <Button onClick={() => router.push("/login")}>{t.nav.login}</Button>
         </div>
       </div>
     );
@@ -229,7 +231,7 @@ export default function EditAuctionPage() {
           <p className="text-red-400 text-lg">{error}</p>
           <Button variant="outline" onClick={() => router.push("/my-auctions")}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver a mis subastas
+            {t.editAuction.backToMyAuctions}
           </Button>
         </div>
       </div>
@@ -250,9 +252,9 @@ export default function EditAuctionPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-white">Editar subasta</h1>
+            <h1 className="text-2xl font-bold text-white">{t.editAuction.title}</h1>
             <p className="text-slate-500 text-sm">
-              Modifica los detalles de tu subasta
+              {t.editAuction.subtitle}
             </p>
           </div>
         </div>
@@ -260,10 +262,10 @@ export default function EditAuctionPage() {
         {/* Info importante */}
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
           <p className="text-amber-400 text-sm">
-            <strong>Nota:</strong> No puedes modificar el precio inicial ni la duración una vez creada la subasta.
+            <strong>{t.editAuction.note}</strong> {t.editAuction.noteText}
             {auction && auction.bidsCount > 0 && (
               <span className="block mt-1">
-                Esta subasta ya tiene {auction.bidsCount} puja(s).
+                {t.editAuction.hasBids.replace("{count}", auction.bidsCount.toString())}
               </span>
             )}
           </p>
@@ -275,24 +277,24 @@ export default function EditAuctionPage() {
 
           {/* Título */}
           <Input
-            label="Título del artículo *"
+            label={`${t.createAuction.auctionTitle} *`}
             name="title"
             value={formData.title}
             onChange={handleChange}
-            placeholder="Ej: Rolex Submariner 2024"
+            placeholder={t.createAuction.auctionTitlePlaceholder}
           />
 
           {/* Descripción */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Descripción
+              {t.createAuction.description}
             </label>
             <textarea
               name="description"
               value={formData.description}
               onChange={handleChange}
               rows={4}
-              placeholder="Describe tu artículo en detalle..."
+              placeholder={t.createAuction.descriptionPlaceholder}
               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
             />
           </div>
@@ -300,7 +302,7 @@ export default function EditAuctionPage() {
           {/* Categoría */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Categoría
+              {t.createAuction.category}
             </label>
             <select
               name="category"
@@ -308,9 +310,9 @@ export default function EditAuctionPage() {
               onChange={handleChange}
               className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
             >
-              {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
+              {Object.keys(t.categories).map((key) => (
+                <option key={key} value={key}>
+                  {t.categories[key as keyof typeof t.categories]}
                 </option>
               ))}
             </select>
@@ -319,7 +321,7 @@ export default function EditAuctionPage() {
           {/* Precios editables */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
-              label="Precio reserva (opcional)"
+              label={t.createAuction.reservePrice}
               name="reservePrice"
               type="number"
               step="0.01"
@@ -329,7 +331,7 @@ export default function EditAuctionPage() {
               placeholder="500.00"
             />
             <Input
-              label="Incremento mínimo"
+              label={t.createAuction.bidIncrement}
               name="bidIncrement"
               type="number"
               step="0.01"
@@ -343,21 +345,21 @@ export default function EditAuctionPage() {
           {auction && (
             <div className="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Precio inicial:</span>
+                <span className="text-slate-500">{t.editAuction.startingPrice}:</span>
                 <span className="text-white font-medium">
                   ${auction.startingPrice.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Puja actual:</span>
+                <span className="text-slate-500">{t.editAuction.currentBid}:</span>
                 <span className="text-emerald-400 font-medium">
                   ${auction.currentBid.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-slate-500">Termina:</span>
+                <span className="text-slate-500">{t.editAuction.endsAt}:</span>
                 <span className="text-white font-medium">
-                  {auction.endTime.toDate().toLocaleString("es-MX")}
+                  {auction.endTime.toDate().toLocaleString(language === "es" ? "es-MX" : "en-US")}
                 </span>
               </div>
             </div>
@@ -366,7 +368,7 @@ export default function EditAuctionPage() {
           {/* Imágenes */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Imágenes (máximo 5)
+              {t.createAuction.images} ({t.createAuction.imagesHint})
             </label>
 
             {/* Imágenes actuales */}
@@ -410,10 +412,10 @@ export default function EditAuctionPage() {
                   <>
                     <ImagePlus className="w-8 h-8 text-gray-500 mx-auto mb-2" />
                     <p className="text-gray-400 text-sm">
-                      Clic para agregar más imágenes
+                      {t.editAuction.addMoreImages}
                     </p>
                     <p className="text-gray-600 text-xs mt-1">
-                      JPG, PNG hasta 10MB
+                      {t.createAuction.imageFormat}
                     </p>
                   </>
                 )}
@@ -429,13 +431,13 @@ export default function EditAuctionPage() {
               onClick={() => router.back()}
               className="flex-1"
             >
-              Cancelar
+              {t.common.cancel}
             </Button>
             <Button type="submit" className="flex-1" disabled={loading}>
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
               ) : (
-                "Guardar cambios"
+                t.editAuction.saveChanges
               )}
             </Button>
           </div>

@@ -7,12 +7,14 @@ import { Loader2, Heart, Gavel, Trash2 } from "lucide-react";
 import { Navbar, Footer } from "@/components/layout";
 import { AuctionCard } from "@/components/auction";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/i18n";
 import { getUserFavoriteIds, removeFromFavorites } from "@/services/favorite.service";
 import { getAuction } from "@/services/auction.service";
 import { Auction } from "@/types/auction.types";
 
 export default function FavoritesPage() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const router = useRouter();
   const [favorites, setFavorites] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,20 +77,20 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 pt-24">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
               <Heart className="w-5 h-5 text-red-500" />
             </div>
-            <h1 className="text-3xl font-bold text-white">Mis Favoritos</h1>
+            <h1 className="text-3xl font-bold text-white">{t.favorites.title}</h1>
           </div>
           <p className="text-slate-400">
-            Subastas que has guardado para ver más tarde
+            {t.favorites.subtitle}
           </p>
         </div>
 
@@ -103,17 +105,17 @@ export default function FavoritesPage() {
               <Heart className="w-8 h-8 text-slate-600" />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2">
-              No tienes favoritos
+              {t.favorites.noFavorites}
             </h3>
             <p className="text-slate-500 mb-6">
-              Guarda subastas que te interesen haciendo clic en el corazón
+              {t.favorites.exploreSuggestion}
             </p>
             <Link
               href="/search"
               className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-lg transition-colors"
             >
               <Gavel className="w-5 h-5" />
-              Explorar Subastas
+              {t.favorites.exploreButton}
             </Link>
           </div>
         ) : (

@@ -14,9 +14,10 @@ import {
 } from "@/services/auction.service";
 import { subscribeToAuctionBids, formatBidAmount } from "@/services/bid.service";
 import { isFavorite, toggleFavorite } from "@/services/favorite.service";
-import { Navbar } from "@/components/layout";
+import { Navbar, Footer } from "@/components/layout";
 import { ShareModal } from "@/components/ui/ShareModal";
 import { useAuth } from "@/hooks/useAuth";
+import { useLanguage } from "@/i18n";
 import BidForm from "./components/BidForm";
 import BidHistory from "./components/BidHistory";
 
@@ -24,6 +25,7 @@ export default function AuctionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const auctionId = params.id as string;
 
   const [auction, setAuction] = useState<Auction | null>(null);
@@ -103,7 +105,7 @@ export default function AuctionDetailPage() {
     const updateTime = () => {
       const remaining = getTimeRemaining(auction.endTime);
       if (remaining.total <= 0) {
-        setTimeRemaining("Finalizada");
+        setTimeRemaining(t.auction.ended);
       } else {
         setTimeRemaining(formatTimeRemaining(auction.endTime));
       }
@@ -113,7 +115,7 @@ export default function AuctionDetailPage() {
     const interval = setInterval(updateTime, 1000);
 
     return () => clearInterval(interval);
-  }, [auction]);
+  }, [auction, t]);
 
   if (loading) {
     return (
@@ -131,13 +133,13 @@ export default function AuctionDetailPage() {
       <div className="min-h-screen bg-slate-950">
         <Navbar />
         <div className="flex flex-col items-center justify-center h-[calc(100vh-80px)] gap-4">
-          <p className="text-gray-400 text-lg">Subasta no encontrada</p>
+          <p className="text-gray-400 text-lg">{t.auction.notFound}</p>
           <button
             onClick={() => router.push("/")}
             className="text-emerald-500 hover:text-emerald-400 flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Volver al inicio
+            {t.auction.backToHome}
           </button>
         </div>
       </div>
@@ -147,17 +149,17 @@ export default function AuctionDetailPage() {
   const isEnding = getTimeRemaining(auction.endTime).total < 300000; 
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Navegación */}
         <button
           onClick={() => router.back()}
           className="text-gray-400 hover:text-white flex items-center gap-2 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Volver
+          {t.auction.back}
         </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -172,7 +174,7 @@ export default function AuctionDetailPage() {
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-500">
-                  Sin imagen
+                  {t.auction.noImage}
                 </div>
               )}
 
@@ -185,7 +187,7 @@ export default function AuctionDetailPage() {
                       : "bg-emerald-600 text-white"
                   }`}
                 >
-                  {isEnding ? "¡Termina pronto!" : "En vivo"}
+                  {isEnding ? t.auction.endingSoon : t.auction.live}
                 </div>
               )}
             </div>
@@ -243,13 +245,13 @@ export default function AuctionDetailPage() {
                 </div>
               </div>
               <p className="text-gray-500 mt-1">
-                Vendedor: {auction.sellerName}
+                {t.auction.seller}: {auction.sellerName}
               </p>
             </div>
 
             {/* Precio actual */}
             <div className="bg-slate-900 rounded-2xl p-6">
-              <p className="text-gray-400 text-sm mb-1">Puja actual</p>
+              <p className="text-gray-400 text-sm mb-1">{t.auction.currentBid}</p>
               <p className="text-3xl sm:text-4xl font-bold text-white">
                 {formatBidAmount(auction.currentBid)}
               </p>
@@ -263,7 +265,7 @@ export default function AuctionDetailPage() {
                 </div>
                 <div className="flex items-center gap-2 text-gray-400">
                   <Users className="w-4 h-4" />
-                  <span>{auction.bidsCount} pujas</span>
+                  <span>{auction.bidsCount} {t.auction.bids}</span>
                 </div>
               </div>
             </div>
@@ -274,13 +276,13 @@ export default function AuctionDetailPage() {
             {/* Garantías */}
             <div className="flex items-center gap-3 text-sm text-gray-400">
               <Shield className="w-5 h-5 text-emerald-500" />
-              <span>Transacción segura • Vendedor verificado</span>
+              <span>{t.auction.secureTransaction}</span>
             </div>
 
             {/* Descripción */}
             <div>
               <h2 className="text-lg font-semibold text-white mb-2">
-                Descripción
+                {t.auction.description}
               </h2>
               <p className="text-gray-400 leading-relaxed">
                 {auction.description}
@@ -294,6 +296,8 @@ export default function AuctionDetailPage() {
           <BidHistory bids={bids} currentUserId={user?.uid || ""} />
         </div>
       </main>
+
+      <Footer />
 
       {/* Modal de compartir */}
       <ShareModal
@@ -311,21 +315,21 @@ export default function AuctionDetailPage() {
             <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
               <Trophy className="w-10 h-10 text-emerald-500" />
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">¡Felicitaciones!</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">{t.auction.congratulations}</h2>
             <p className="text-slate-400 mb-4">
-              Has ganado la subasta <strong className="text-white">{auction.title}</strong>
+              {t.auction.youWonAuction} <strong className="text-white">{auction.title}</strong>
             </p>
             <p className="text-3xl font-bold text-emerald-500 mb-6">
               {formatBidAmount(auction.currentBid)}
             </p>
             <p className="text-slate-500 text-sm mb-6">
-              Contacta al vendedor <strong className="text-slate-300">{auction.sellerName}</strong> para coordinar el pago y la entrega.
+              {t.auction.contactSeller} <strong className="text-slate-300">{auction.sellerName}</strong> {t.auction.forPaymentDelivery}
             </p>
             <button
               onClick={() => setShowWinnerBanner(false)}
               className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors"
             >
-              ¡Entendido!
+              {t.auction.understood}
             </button>
           </div>
         </div>

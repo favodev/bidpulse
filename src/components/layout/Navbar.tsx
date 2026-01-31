@@ -6,23 +6,26 @@ import Image from "next/image";
 import { User, Menu, X, LogOut, Settings, UserPlus, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuctionAutoFinalize } from "@/hooks/useAuctionAutoFinalize";
-import { Button } from "@/components/ui";
-
-const publicLinks = [
-  { href: "/search", label: "Explorar" },
-];
-
-const userLinks = [
-  { href: "/my-bids", label: "Mis Pujas" },
-  { href: "/my-auctions", label: "Mis Subastas" },
-];
+import { Button, LanguageToggle } from "@/components/ui";
+import { useLanguage } from "@/i18n";
 
 export function Navbar() {
   const { user, userAvatar, logout } = useAuth();
+  const { t } = useLanguage();
   useAuctionAutoFinalize(); 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Links de navegación con traducciones
+  const publicLinks = [
+    { href: "/search", label: t.nav.explore },
+  ];
+
+  const userLinks = [
+    { href: "/my-bids", label: t.nav.myBids },
+    { href: "/my-auctions", label: t.nav.myAuctions },
+  ];
 
   // Combinar links según si hay usuario logueado
   const navLinks = user ? [...publicLinks, ...userLinks] : publicLinks;
@@ -76,9 +79,11 @@ export function Navbar() {
           <div className="hidden md:flex items-center gap-4">
             <Link href="/auction/create">
               <Button size="sm" variant="primary">
-                Vender Artículo
+                {t.nav.sellItem}
               </Button>
             </Link>
+            
+            <LanguageToggle />
 
             {user ? (
               <div className="relative" ref={userMenuRef}>
@@ -103,7 +108,7 @@ export function Navbar() {
                     {/* Info del usuario */}
                     <div className="px-4 py-2 border-b border-slate-700">
                       <p className="text-white text-sm font-medium truncate">
-                        {user.displayName || "Usuario"}
+                        {user.displayName || t.nav.user}
                       </p>
                       <p className="text-gray-500 text-xs truncate">
                         {user.email}
@@ -116,7 +121,7 @@ export function Navbar() {
                       className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
                     >
                       <Settings className="w-4 h-4" />
-                      Editar perfil
+                      {t.nav.editProfile}
                     </Link>
 
                     <Link
@@ -125,7 +130,7 @@ export function Navbar() {
                       className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
                     >
                       <Heart className="w-4 h-4" />
-                      Mis favoritos
+                      {t.nav.favorites}
                     </Link>
 
                     <button
@@ -133,7 +138,7 @@ export function Navbar() {
                       className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-slate-800 transition-colors cursor-pointer"
                     >
                       <LogOut className="w-4 h-4" />
-                      Cerrar sesión
+                      {t.nav.logout}
                     </button>
                   </div>
                 )}
@@ -143,12 +148,12 @@ export function Navbar() {
               <div className="flex items-center gap-2">
                 <Link href="/login">
                   <Button size="sm" variant="ghost">
-                    Iniciar sesión
+                    {t.nav.login}
                   </Button>
                 </Link>
                 <Link href="/signup">
                   <Button size="sm" variant="outline">
-                    Registrarse
+                    {t.nav.signup}
                   </Button>
                 </Link>
               </div>
@@ -183,9 +188,14 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="pt-4 border-t border-slate-800 flex flex-col gap-3">
+                {/* Language toggle móvil */}
+                <div className="flex justify-center pb-2">
+                  <LanguageToggle />
+                </div>
+                
                 <Link href="/auction/create" onClick={() => setMobileMenuOpen(false)}>
                   <Button size="sm" variant="primary" fullWidth>
-                    Vender Artículo
+                    {t.nav.sellItem}
                   </Button>
                 </Link>
 
@@ -193,7 +203,7 @@ export function Navbar() {
                   <>
                     <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
                       <Button size="sm" variant="ghost" fullWidth>
-                        Editar perfil
+                        {t.nav.editProfile}
                       </Button>
                     </Link>
                     <button
@@ -203,19 +213,19 @@ export function Navbar() {
                       }}
                       className="w-full py-2 text-red-400 hover:text-red-300 text-sm font-medium cursor-pointer"
                     >
-                      Cerrar sesión
+                      {t.nav.logout}
                     </button>
                   </>
                 ) : (
                   <>
                     <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                       <Button size="sm" variant="ghost" fullWidth>
-                        Iniciar sesión
+                        {t.nav.login}
                       </Button>
                     </Link>
                     <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
                       <Button size="sm" variant="outline" fullWidth>
-                        Registrarse
+                        {t.nav.signup}
                       </Button>
                     </Link>
                   </>

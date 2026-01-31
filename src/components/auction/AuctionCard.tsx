@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { Clock, Gavel, Tag } from "lucide-react";
-import { Auction, CATEGORY_LABELS } from "@/types/auction.types";
+import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
+import { useLanguage } from "@/i18n";
 
 interface AuctionCardProps {
   auction: Auction;
@@ -11,12 +12,12 @@ interface AuctionCardProps {
 }
 
 // Función para formatear tiempo restante
-function formatTimeRemaining(endTime: Timestamp): string {
+function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
   const now = new Date();
   const end = endTime.toDate();
   const diff = end.getTime() - now.getTime();
 
-  if (diff <= 0) return "Finalizada";
+  if (diff <= 0) return endedText;
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -37,9 +38,14 @@ function formatPrice(price: number): string {
 }
 
 export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
+  const { t } = useLanguage();
   const isEnded = auction.status === "ended";
-  const timeRemaining = formatTimeRemaining(auction.endTime);
+  const timeRemaining = formatTimeRemaining(auction.endTime, t.auction.ended);
   const isEndingSoon = !isEnded && auction.endTime.toDate().getTime() - Date.now() < 3600000;
+
+  // Obtener etiqueta de categoría traducida
+  const categoryKey = auction.category as keyof typeof t.categories;
+  const categoryLabel = t.categories[categoryKey] || auction.category;
 
   return (
     <Link href={`/auction/${auction.id}`}>
@@ -61,11 +67,11 @@ export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
           {/* Badge de estado */}
           {isEnded ? (
             <div className="absolute top-3 left-3 bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded-full">
-              Finalizada
+              {t.auction.ended}
             </div>
           ) : isEndingSoon ? (
             <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
-              ¡Termina pronto!
+              {t.auction.endingSoon}
             </div>
           ) : null}
 
@@ -73,7 +79,7 @@ export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
           {!compact && (
             <div className="absolute top-3 right-3 bg-black/70 text-gray-300 text-xs px-2 py-1 rounded-full flex items-center gap-1">
               <Tag className="w-3 h-3" />
-              {CATEGORY_LABELS[auction.category]}
+              {categoryLabel}
             </div>
           )}
         </div>
@@ -86,7 +92,7 @@ export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
 
           <div className="flex items-center justify-between text-sm mb-3">
             <div>
-              <p className="text-gray-500 text-xs">Puja actual</p>
+              <p className="text-gray-500 text-xs">{t.auction.currentBid}</p>
               <p className={`text-emerald-400 font-bold ${compact ? "text-sm" : ""}`}>
                 {formatPrice(auction.currentBid)}
               </p>
@@ -95,7 +101,7 @@ export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
             <div className="text-right">
               <p className="text-gray-500 text-xs flex items-center gap-1 justify-end">
                 <Clock className="w-3 h-3" />
-                {isEnded ? "Terminó" : "Termina en"}
+                {isEnded ? t.auction.ended : t.auction.timeRemaining}
               </p>
               <p className={`font-medium ${isEndingSoon ? "text-red-400" : "text-gray-300"} ${compact ? "text-sm" : ""}`}>
                 {timeRemaining}
@@ -108,7 +114,7 @@ export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
             <div className="flex items-center justify-between pt-3 border-t border-slate-800">
               <div className="flex items-center gap-1 text-gray-500 text-xs">
                 <Gavel className="w-3 h-3" />
-                {auction.bidsCount} pujas
+                {auction.bidsCount} {t.auction.bids}
               </div>
 
               {auction.sellerAvatar ? (

@@ -8,12 +8,12 @@ import {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
       {/* Navbar */}
       <Navbar />
 
       {/* Contenido principal */}
-      <main className="pt-16">
+      <main className="flex-1 pt-16">
         <HeroSection />
         <EndingSoonSection />
         <PopularAuctionsSection />
