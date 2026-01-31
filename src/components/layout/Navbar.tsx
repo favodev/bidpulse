@@ -10,7 +10,7 @@ import { Button, LanguageToggle } from "@/components/ui";
 import { useLanguage } from "@/i18n";
 
 export function Navbar() {
-  const { user, userAvatar, logout } = useAuth();
+  const { user, userAvatar, logout, loading } = useAuth();
   const { t } = useLanguage();
   useAuctionAutoFinalize(); 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -85,7 +85,9 @@ export function Navbar() {
             
             <LanguageToggle />
 
-            {user ? (
+            {loading ? (
+              <div className="w-8 h-8 rounded-full bg-slate-800 animate-pulse" />
+            ) : user ? (
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
