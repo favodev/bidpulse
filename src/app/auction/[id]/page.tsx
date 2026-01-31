@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Clock, Users, ArrowLeft, Heart, Share2, Shield } from "lucide-react";
+import Link from "next/link";
+import { Clock, Users, ArrowLeft, Heart, Share2, Shield, Trophy, Loader2 } from "lucide-react";
 import { Auction } from "@/types/auction.types";
 import { Bid } from "@/types/bid.types";
 import {
@@ -12,13 +13,17 @@ import {
   checkAndFinalizeAuction,
 } from "@/services/auction.service";
 import { subscribeToAuctionBids, formatBidAmount } from "@/services/bid.service";
+import { isFavorite, toggleFavorite } from "@/services/favorite.service";
 import { Navbar } from "@/components/layout";
+import { ShareModal } from "@/components/ui/ShareModal";
+import { useAuth } from "@/hooks/useAuth";
 import BidForm from "./components/BidForm";
 import BidHistory from "./components/BidHistory";
 
 export default function AuctionDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   const auctionId = params.id as string;
 
   const [auction, setAuction] = useState<Auction | null>(null);
@@ -26,6 +31,12 @@ export default function AuctionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [timeRemaining, setTimeRemaining] = useState("");
   const [selectedImage, setSelectedImage] = useState(0);
+  
+  // Estados para compartir y favoritos
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [isFav, setIsFav] = useState(false);
+  const [loadingFav, setLoadingFav] = useState(false);
+  const [showWinnerBanner, setShowWinnerBanner] = useState(false);
 
   useEffect(() => {
     if (!auctionId) return;
@@ -34,6 +45,11 @@ export default function AuctionDetailPage() {
       if (data) {
         const finalizedAuction = await checkAndFinalizeAuction(data);
         setAuction(finalizedAuction);
+        
+        // Verificar si el usuario ganó la subasta
+        if (user && finalizedAuction.status === "ended" && finalizedAuction.highestBidderId === user.uid) {
+          setShowWinnerBanner(true);
+        }
       } else {
         setAuction(null);
       }
@@ -41,7 +57,35 @@ export default function AuctionDetailPage() {
     });
 
     return () => unsubscribe();
-  }, [auctionId]);
+  }, [auctionId, user]);
+
+  // Verificar si está en favoritos
+  useEffect(() => {
+    async function checkFavorite() {
+      if (!user || !auctionId) return;
+      const fav = await isFavorite(user.uid, auctionId);
+      setIsFav(fav);
+    }
+    checkFavorite();
+  }, [user, auctionId]);
+
+  // Toggle favorito
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    
+    setLoadingFav(true);
+    try {
+      const newState = await toggleFavorite(user.uid, auctionId);
+      setIsFav(newState);
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+    } finally {
+      setLoadingFav(false);
+    }
+  };
 
   useEffect(() => {
     if (!auctionId) return;
@@ -175,10 +219,25 @@ export default function AuctionDetailPage() {
                   {auction.title}
                 </h1>
                 <div className="flex gap-2">
-                  <button className="p-2 rounded-lg bg-slate-900 text-gray-400 hover:text-white transition-colors">
-                    <Heart className="w-5 h-5" />
+                  <button 
+                    onClick={handleToggleFavorite}
+                    disabled={loadingFav}
+                    className={`p-2 rounded-lg transition-colors ${
+                      isFav 
+                        ? "bg-red-500/20 text-red-500" 
+                        : "bg-slate-900 text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    {loadingFav ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Heart className={`w-5 h-5 ${isFav ? "fill-current" : ""}`} />
+                    )}
                   </button>
-                  <button className="p-2 rounded-lg bg-slate-900 text-gray-400 hover:text-white transition-colors">
+                  <button 
+                    onClick={() => setShowShareModal(true)}
+                    className="p-2 rounded-lg bg-slate-900 text-gray-400 hover:text-white transition-colors"
+                  >
                     <Share2 className="w-5 h-5" />
                   </button>
                 </div>
@@ -232,9 +291,45 @@ export default function AuctionDetailPage() {
 
         {/* Historial de pujas */}
         <div className="mt-12">
-          <BidHistory bids={bids} currentUserId="" />
+          <BidHistory bids={bids} currentUserId={user?.uid || ""} />
         </div>
       </main>
+
+      {/* Modal de compartir */}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title={auction?.title || ""}
+        url={typeof window !== "undefined" ? window.location.href : ""}
+      />
+
+      {/* Banner de ganador */}
+      {showWinnerBanner && auction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowWinnerBanner(false)} />
+          <div className="relative bg-slate-900 rounded-2xl border border-emerald-500/50 w-full max-w-md p-8 shadow-xl text-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <Trophy className="w-10 h-10 text-emerald-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">¡Felicitaciones!</h2>
+            <p className="text-slate-400 mb-4">
+              Has ganado la subasta <strong className="text-white">{auction.title}</strong>
+            </p>
+            <p className="text-3xl font-bold text-emerald-500 mb-6">
+              {formatBidAmount(auction.currentBid)}
+            </p>
+            <p className="text-slate-500 text-sm mb-6">
+              Contacta al vendedor <strong className="text-slate-300">{auction.sellerName}</strong> para coordinar el pago y la entrega.
+            </p>
+            <button
+              onClick={() => setShowWinnerBanner(false)}
+              className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors"
+            >
+              ¡Entendido!
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

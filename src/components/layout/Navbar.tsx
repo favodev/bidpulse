@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { User, Menu, X, LogOut, Settings, UserPlus } from "lucide-react";
+import { User, Menu, X, LogOut, Settings, UserPlus, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuctionAutoFinalize } from "@/hooks/useAuctionAutoFinalize";
 import { Button } from "@/components/ui";
@@ -117,6 +117,15 @@ export function Navbar() {
                     >
                       <Settings className="w-4 h-4" />
                       Editar perfil
+                    </Link>
+
+                    <Link
+                      href="/favorites"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <Heart className="w-4 h-4" />
+                      Mis favoritos
                     </Link>
 
                     <button
