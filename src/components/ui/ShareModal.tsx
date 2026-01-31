@@ -119,7 +119,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
             </div>
             <button
               onClick={handleCopyLink}
-              className={`px-4 py-3 rounded-xl font-medium transition-colors shrink-0 min-w-[80px] ${
+              className={`px-4 py-3 rounded-xl font-medium transition-colors shrink-0 min-w-20 ${
                 copied
                   ? "bg-emerald-500 text-white"
                   : "bg-slate-800 text-white hover:bg-slate-700"

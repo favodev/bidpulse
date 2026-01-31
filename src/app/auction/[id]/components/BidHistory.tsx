@@ -52,7 +52,7 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
               className={`flex items-center justify-between p-4 rounded-xl ${
                 isWinning
                   ? "bg-emerald-500/10 border border-emerald-500/30"
-                  : "bg-[#252525]"
+                  : "bg-slate-800"
               }`}
             >
               <div className="flex items-center gap-3">

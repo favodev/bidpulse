@@ -180,7 +180,7 @@ export default function CreateAuctionPage() {
     <div className="min-h-screen bg-slate-950 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 pt-24">
         <h1 className="text-2xl sm:text-3xl font-bold text-white mb-8">
           {t.createAuction.title}
         </h1>

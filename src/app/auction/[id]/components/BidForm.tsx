@@ -107,7 +107,7 @@ export default function BidForm({ auction }: BidFormProps) {
             <button
               key={amount}
               onClick={() => handleQuickBid(amount)}
-              className="px-4 py-2 rounded-lg bg-[#252525] text-white text-sm hover:bg-[#303030] transition-colors"
+              className="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm hover:bg-slate-700 transition-colors"
             >
               {formatBidAmount(amount)}
             </button>
@@ -132,7 +132,7 @@ export default function BidForm({ auction }: BidFormProps) {
               value={bidAmount}
               onChange={(e) => setBidAmount(e.target.value)}
               placeholder={minBid.toFixed(2)}
-              className="w-full bg-[#252525] border border-gray-700 rounded-lg pl-8 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-8 pr-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500"
               disabled={loading}
             />
           </div>
