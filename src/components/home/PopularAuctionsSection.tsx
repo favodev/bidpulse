@@ -7,14 +7,7 @@ import { getPopularAuctions } from "@/services/auction.service";
 import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
 import { useLanguage } from "@/i18n";
-
-const formatPrice = (price: number) => {
-  const formatted = new Intl.NumberFormat("es-CL", {
-    style: "decimal",
-    maximumFractionDigits: 0,
-  }).format(price);
-  return `$${formatted} CLP`;
-};
+import { useCurrency } from "@/hooks/useCurrency";
 
 function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
   const now = new Date();
@@ -32,7 +25,7 @@ function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
   return `${minutes}m`;
 }
 
-function PopularAuctionCard({ auction, t }: { auction: Auction; t: ReturnType<typeof useLanguage>['t'] }) {
+function PopularAuctionCard({ auction, t, formatPrice }: { auction: Auction; t: ReturnType<typeof useLanguage>['t']; formatPrice: (amount: number) => string }) {
   const [isLiked, setIsLiked] = useState(false);
   const timeLeft = formatTimeRemaining(auction.endTime, t.auction.ended);
 
@@ -98,6 +91,7 @@ export function PopularAuctionsSection() {
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
   const { t } = useLanguage();
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     async function loadAuctions() {
@@ -159,7 +153,7 @@ export function PopularAuctionsSection() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {auctions.map((auction) => (
-              <PopularAuctionCard key={auction.id} auction={auction} t={t} />
+              <PopularAuctionCard key={auction.id} auction={auction} t={t} formatPrice={formatPrice} />
             ))}
           </div>
         )}

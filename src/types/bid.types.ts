@@ -18,6 +18,7 @@ export interface CreateBidData {
   auctionId: string;
   bidderId: string;
   bidderName: string;
+  bidderAvatar?: string;
   amount: number;
 }
 

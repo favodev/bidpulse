@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/layout";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/hooks/useCurrency";
 import { getUserBids } from "@/services/bid.service";
 import { getAuction } from "@/services/auction.service";
 import { Bid } from "@/types/bid.types";
@@ -26,14 +27,6 @@ type TabType = "active" | "won" | "outbid" | "all";
 interface BidWithAuction extends Bid {
   auction?: Auction;
 }
-
-const formatPrice = (price: number) => {
-  const formatted = new Intl.NumberFormat("es-CL", {
-    style: "decimal",
-    maximumFractionDigits: 0,
-  }).format(price);
-  return `$${formatted} CLP`;
-};
 
 function formatTimeRemaining(endTime: Timestamp, t: { auction: { ended: string } }): string {
   const now = new Date();
@@ -52,6 +45,7 @@ function formatTimeRemaining(endTime: Timestamp, t: { auction: { ended: string }
 }
 
 function BidCard({ bid, t }: { bid: BidWithAuction; t: ReturnType<typeof useLanguage>['t'] }) {
+  const { formatPrice } = useCurrency();
   const auction = bid.auction;
   if (!auction) return null;
 
@@ -179,6 +173,7 @@ function BidCard({ bid, t }: { bid: BidWithAuction; t: ReturnType<typeof useLang
 
 export default function MyBidsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { formatPrice } = useCurrency();
   const router = useRouter();
   const { t } = useLanguage();
   const [bids, setBids] = useState<BidWithAuction[]>([]);

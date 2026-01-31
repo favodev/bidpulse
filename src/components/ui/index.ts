@@ -5,3 +5,4 @@ export { Alert } from "./Alert";
 export { ImageCropper } from "./ImageCropper";
 export { LanguageToggle } from "./LanguageToggle";
 export { NotificationCenter } from "./NotificationCenter";
+export { CurrencySelector } from "./CurrencySelector";

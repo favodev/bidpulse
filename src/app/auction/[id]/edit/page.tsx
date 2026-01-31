@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout";
 import { Footer } from "@/components/layout";
 import { Input, Button, Alert } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/hooks/useCurrency";
 import { getAuction, updateAuction } from "@/services/auction.service";
 import { Auction, AuctionCategory } from "@/types/auction.types";
 import { useLanguage } from "@/i18n";
@@ -41,6 +42,7 @@ export default function EditAuctionPage() {
   const params = useParams();
   const auctionId = params.id as string;
   const { user } = useAuth();
+  const { formatPrice } = useCurrency();
   const { t, language } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -347,13 +349,13 @@ export default function EditAuctionPage() {
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">{t.editAuction.startingPrice}:</span>
                 <span className="text-white font-medium">
-                  ${auction.startingPrice.toLocaleString()}
+                  {formatPrice(auction.startingPrice)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">{t.editAuction.currentBid}:</span>
                 <span className="text-emerald-400 font-medium">
-                  ${auction.currentBid.toLocaleString()}
+                  {formatPrice(auction.currentBid)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">

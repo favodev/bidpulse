@@ -8,14 +8,7 @@ import { getEndingSoonAuctions } from "@/services/auction.service";
 import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
 import { useLanguage } from "@/i18n";
-
-const formatPrice = (price: number) => {
-  const formatted = new Intl.NumberFormat("es-CL", {
-    style: "decimal",
-    maximumFractionDigits: 0,
-  }).format(price);
-  return `$${formatted} CLP`;
-};
+import { useCurrency } from "@/hooks/useCurrency";
 
 function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
   const now = new Date();
@@ -33,7 +26,7 @@ function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
   return `${minutes}m`;
 }
 
-function EndingSoonCard({ auction, t }: { auction: Auction; t: ReturnType<typeof useLanguage>['t'] }) {
+function EndingSoonCard({ auction, t, formatPrice }: { auction: Auction; t: ReturnType<typeof useLanguage>['t']; formatPrice: (amount: number) => string }) {
   const timeLeft = formatTimeRemaining(auction.endTime, t.auction.ended);
 
   return (
@@ -86,6 +79,7 @@ export function EndingSoonSection() {
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);
   const { t } = useLanguage();
+  const { formatPrice } = useCurrency();
 
   useEffect(() => {
     async function loadAuctions() {
@@ -138,7 +132,7 @@ export function EndingSoonSection() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {auctions.map((auction) => (
-              <EndingSoonCard key={auction.id} auction={auction} t={t} />
+              <EndingSoonCard key={auction.id} auction={auction} t={t} formatPrice={formatPrice} />
             ))}
           </div>
         )}

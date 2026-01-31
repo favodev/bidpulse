@@ -3,7 +3,7 @@
 import { Trophy, User } from "lucide-react";
 import { Bid } from "@/types/bid.types";
 import { useLanguage } from "@/i18n";
-import { formatBidAmount } from "@/services/bid.service";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface BidHistoryProps {
   bids: Bid[];
@@ -12,6 +12,7 @@ interface BidHistoryProps {
 
 export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
   const { t, language } = useLanguage();
+  const { formatPrice } = useCurrency();
 
   if (bids.length === 0) {
     return (
@@ -101,11 +102,11 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
                     isWinning ? "text-emerald-400" : "text-white"
                   }`}
                 >
-                  {formatBidAmount(bid.amount)}
+                  {formatPrice(bid.amount)}
                 </p>
                 {bid.previousBid && (
                   <p className="text-gray-500 text-xs">
-                    +{formatBidAmount(bid.amount - bid.previousBid)}
+                    +{formatPrice(bid.amount - bid.previousBid)}
                   </p>
                 )}
               </div>

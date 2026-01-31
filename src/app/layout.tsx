@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/hooks/useAuth";
 import { NotificationsProvider } from "@/hooks/useNotifications";
+import { CurrencyProvider } from "@/hooks/useCurrency";
 import { LanguageProvider } from "@/i18n";
 import "./globals.css";
 
@@ -37,11 +38,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <LanguageProvider>
-          <AuthProvider>
-            <NotificationsProvider>
-              {children}
-            </NotificationsProvider>
-          </AuthProvider>
+          <CurrencyProvider>
+            <AuthProvider>
+              <NotificationsProvider>
+                {children}
+              </NotificationsProvider>
+            </AuthProvider>
+          </CurrencyProvider>
         </LanguageProvider>
       </body>
     </html>

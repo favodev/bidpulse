@@ -114,7 +114,7 @@ export async function placeBid(data: CreateBidData): Promise<BidResult> {
 
       // 6. Crear la puja
       const bidRef = doc(collection(db, BIDS_COLLECTION));
-      const bidData = {
+      const bidData: Record<string, unknown> = {
         auctionId,
         bidderId,
         bidderName,
@@ -123,6 +123,11 @@ export async function placeBid(data: CreateBidData): Promise<BidResult> {
         createdAt: serverTimestamp(),
         isWinning: true,
       };
+
+      // Agregar avatar si existe
+      if (data.bidderAvatar) {
+        bidData.bidderAvatar = data.bidderAvatar;
+      }
 
       transaction.set(bidRef, bidData);
 

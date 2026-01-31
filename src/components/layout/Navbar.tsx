@@ -6,7 +6,7 @@ import Image from "next/image";
 import { User, Menu, X, LogOut, Settings, UserPlus, Heart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuctionAutoFinalize } from "@/hooks/useAuctionAutoFinalize";
-import { Button, LanguageToggle, NotificationCenter } from "@/components/ui";
+import { Button, LanguageToggle, NotificationCenter, CurrencySelector } from "@/components/ui";
 import { useLanguage } from "@/i18n";
 
 export function Navbar() {
@@ -76,13 +76,14 @@ export function Navbar() {
           </div>
 
           {/* Acciones */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
             <Link href="/auction/create">
               <Button size="sm" variant="primary">
                 {t.nav.sellItem}
               </Button>
             </Link>
             
+            <CurrencySelector />
             <LanguageToggle />
 
             {loading ? (

@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Gavel, Loader2, TrendingUp } from "lucide-react";
 import { Auction } from "@/types/auction.types";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/hooks/useCurrency";
 import { useLanguage } from "@/i18n";
-import { placeBid, calculateMinBid, formatBidAmount } from "@/services/bid.service";
+import { placeBid, calculateMinBid } from "@/services/bid.service";
 import { Alert } from "@/components/ui";
 
 interface BidFormProps {
@@ -15,6 +16,7 @@ interface BidFormProps {
 export default function BidForm({ auction }: BidFormProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { formatPrice } = useCurrency();
   const [bidAmount, setBidAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +41,7 @@ export default function BidForm({ auction }: BidFormProps) {
 
     const amount = parseFloat(bidAmount);
     if (isNaN(amount) || amount < minBid) {
-      setError(`${t.auction.minBid}: ${formatBidAmount(minBid)}`);
+      setError(`${t.auction.minBid}: ${formatPrice(minBid)}`);
       return;
     }
 
@@ -49,6 +51,7 @@ export default function BidForm({ auction }: BidFormProps) {
       auctionId: auction.id,
       bidderId: user.uid,
       bidderName: user.displayName || "Anónimo",
+      bidderAvatar: user.photoURL || undefined,
       amount,
     });
 
@@ -109,7 +112,7 @@ export default function BidForm({ auction }: BidFormProps) {
               onClick={() => handleQuickBid(amount)}
               className="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm hover:bg-slate-700 transition-colors"
             >
-              {formatBidAmount(amount)}
+              {formatPrice(amount)}
             </button>
           ))}
         </div>
@@ -119,7 +122,7 @@ export default function BidForm({ auction }: BidFormProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="text-gray-400 text-sm block mb-2">
-            {t.auction.yourBid} ({t.auction.minBid}: {formatBidAmount(minBid)})
+            {t.auction.yourBid} ({t.auction.minBid}: {formatPrice(minBid)})
           </label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">

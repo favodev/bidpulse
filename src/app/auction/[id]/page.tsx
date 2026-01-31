@@ -12,11 +12,12 @@ import {
   getTimeRemaining,
   checkAndFinalizeAuction,
 } from "@/services/auction.service";
-import { subscribeToAuctionBids, formatBidAmount } from "@/services/bid.service";
+import { subscribeToAuctionBids } from "@/services/bid.service";
 import { isFavorite, toggleFavorite } from "@/services/favorite.service";
 import { Navbar, Footer } from "@/components/layout";
 import { ShareModal } from "@/components/ui/ShareModal";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/hooks/useCurrency";
 import { useLanguage } from "@/i18n";
 import BidForm from "./components/BidForm";
 import BidHistory from "./components/BidHistory";
@@ -26,6 +27,7 @@ export default function AuctionDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { formatPrice } = useCurrency();
   const auctionId = params.id as string;
 
   const [auction, setAuction] = useState<Auction | null>(null);
@@ -253,7 +255,7 @@ export default function AuctionDetailPage() {
             <div className="bg-slate-900 rounded-2xl p-6">
               <p className="text-gray-400 text-sm mb-1">{t.auction.currentBid}</p>
               <p className="text-3xl sm:text-4xl font-bold text-white">
-                {formatBidAmount(auction.currentBid)}
+                {formatPrice(auction.currentBid)}
               </p>
 
               <div className="flex items-center gap-6 mt-4 text-sm">
@@ -320,7 +322,7 @@ export default function AuctionDetailPage() {
               {t.auction.youWonAuction} <strong className="text-white">{auction.title}</strong>
             </p>
             <p className="text-3xl font-bold text-emerald-500 mb-6">
-              {formatBidAmount(auction.currentBid)}
+              {formatPrice(auction.currentBid)}
             </p>
             <p className="text-slate-500 text-sm mb-6">
               {t.auction.contactSeller} <strong className="text-slate-300">{auction.sellerName}</strong> {t.auction.forPaymentDelivery}

@@ -17,20 +17,13 @@ import { Navbar } from "@/components/layout";
 import { Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/hooks/useCurrency";
 import { getAuctions, deleteAuction } from "@/services/auction.service";
 import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
 import { useLanguage } from "@/i18n";
 
 type TabType = "active" | "ended" | "all";
-
-const formatPrice = (price: number) => {
-  const formatted = new Intl.NumberFormat("es-CL", {
-    style: "decimal",
-    maximumFractionDigits: 0,
-  }).format(price);
-  return `$${formatted} CLP`;
-};
 
 function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
   const now = new Date();
@@ -57,6 +50,7 @@ function AuctionRow({
   onDelete: (id: string) => void;
   t: ReturnType<typeof useLanguage>['t'];
 }) {
+  const { formatPrice } = useCurrency();
   const [showMenu, setShowMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const isEnded = auction.status === "ended" || auction.endTime.toDate() < new Date();
@@ -196,6 +190,7 @@ function AuctionRow({
 export default function MyAuctionsPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { formatPrice } = useCurrency();
   const { t } = useLanguage();
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [loading, setLoading] = useState(true);

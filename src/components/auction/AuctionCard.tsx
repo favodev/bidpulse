@@ -5,6 +5,7 @@ import { Clock, Gavel, Tag } from "lucide-react";
 import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
 import { useLanguage } from "@/i18n";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface AuctionCardProps {
   auction: Auction;
@@ -28,17 +29,9 @@ function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
   return `${minutes}m`;
 }
 
-// Función para formatear precio
-function formatPrice(price: number): string {
-  const formatted = new Intl.NumberFormat("es-CL", {
-    style: "decimal",
-    maximumFractionDigits: 0,
-  }).format(price);
-  return `$${formatted} CLP`;
-}
-
 export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
   const { t } = useLanguage();
+  const { formatPrice } = useCurrency();
   const isEnded = auction.status === "ended";
   const timeRemaining = formatTimeRemaining(auction.endTime, t.auction.ended);
   const isEndingSoon = !isEnded && auction.endTime.toDate().getTime() - Date.now() < 3600000;
