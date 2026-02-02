@@ -6,7 +6,7 @@ import { useLanguage } from "@/i18n";
 import { useAuth } from "@/hooks/useAuth";
 import { Navbar, Footer } from "@/components/layout";
 import { Button, Alert } from "@/components/ui";
-import { Bell, Trash2, Save, Loader2 } from "lucide-react";
+import { Bell, Save, Loader2 } from "lucide-react";
 import { getUserProfile, updateUserSettings } from "@/services/user.service";
 import { UserSettings } from "@/types/user.types";
 
@@ -174,23 +174,27 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Zona de Peligro */}
-        <div className="bg-red-950/10 border border-red-900/30 rounded-xl overflow-hidden">
-          <div className="p-6">
-            <h3 className="text-red-500 font-semibold mb-2 flex items-center gap-2">
-              <Trash2 size={18} />
-              {t.settings.danger.deleteAccount}
-            </h3>
-            <p className="text-slate-400 text-sm mb-4">
-              {t.settings.danger.deleteDesc}
-            </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="border-red-600 text-red-500 hover:bg-red-950 hover:border-red-500"
-            >
-              {t.settings.danger.deleteBtn}
-            </Button>
+        {/* Zona de Peligro (minimal) */}
+        <div className="rounded-xl border border-slate-800 bg-slate-900/40">
+          <div className="p-4 flex items-center justify-between gap-4">
+            <div>
+              <h3 className="text-sm font-semibold text-red-400">
+                {t.settings.danger.deleteAccount}
+              </h3>
+              <p className="text-slate-400 text-sm mt-1">
+                {t.settings.danger.deleteDesc}
+              </p>
+            </div>
+
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-red-700 text-red-500 hover:bg-red-950/30 hover:border-red-500"
+              >
+                {t.settings.danger.deleteBtn}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

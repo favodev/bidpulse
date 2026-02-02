@@ -12,8 +12,6 @@ import { StarRating } from "@/components/ui/StarRating";
 import {
   Calendar,
   ShieldCheck,
-  Mail,
-  Flag,
   ShoppingBag,
   Award,
   Loader2,
@@ -40,14 +38,19 @@ export default function UserProfilePage() {
 
   // Cargar datos del usuario y sus subastas
   useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
     async function loadUserData() {
       try {
         setLoading(true);
-        
+
         // Cargar perfil del usuario
         const profile = await getUserProfile(id);
         setUserProfile(profile);
-        
+
         // Cargar subastas activas del usuario
         if (profile) {
           const userAuctions = await getAuctions({
@@ -130,30 +133,31 @@ export default function UserProfilePage() {
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 md:p-8 mb-8">
             <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-start">
               {/* Avatar con badge de verificación */}
-              <div className="relative">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-slate-800 bg-slate-800">
-                {userProfile.avatar ? (
-                  <Image
-                    src={userProfile.avatar}
-                    alt={userProfile.displayName}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-500 text-4xl font-bold">
-                    {userProfile.displayName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
-              {userProfile.isVerified && (
-                <div
-                  className="absolute bottom-1 right-1 bg-blue-500 text-white p-1.5 rounded-full border-2 border-slate-900"
-                  title={t.publicProfile.verified}
-                >
-                  <ShieldCheck size={16} />
+              <div>
+                <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-slate-800 bg-slate-800 relative">
+                  {userProfile.avatar ? (
+                    <Image
+                      src={userProfile.avatar}
+                      alt={userProfile.displayName}
+                      fill
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-500 text-4xl font-bold">
+                      {(userProfile.displayName && userProfile.displayName.charAt(0).toUpperCase()) || "?"}
+                    </div>
+                  )}
+
+                  {userProfile.isVerified && (
+                    <div
+                      className="absolute bottom-1 right-1 bg-blue-500 text-white p-1.5 rounded-full border-2 border-slate-900"
+                      title={t.publicProfile.verified}
+                    >
+                      <ShieldCheck size={16} />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
 
             {/* Información del usuario */}
             <div className="flex-1 space-y-3">
@@ -183,22 +187,7 @@ export default function UserProfilePage() {
                 </div>
 
                 {/* Acciones */}
-                <div className="flex items-center gap-3">
-                  <Link href="/contact">
-                    <Button variant="outline" size="sm">
-                      <Mail size={16} className="mr-2" />
-                      {t.publicProfile.message}
-                    </Button>
-                  </Link>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-slate-500 hover:text-red-400"
-                    title={t.publicProfile.report}
-                  >
-                    <Flag size={18} />
-                  </Button>
-                </div>
+                <div />
               </div>
 
               {/* Biografía */}
