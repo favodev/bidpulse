@@ -19,6 +19,15 @@ export function SellerRatingSummaryCard({
   const { t } = useLanguage();
 
   if (summary.totalReviews === 0) {
+    if (compact) {
+      return (
+        <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/40 rounded-lg border border-slate-800">
+          <Star className="w-4 h-4 text-gray-500" />
+          <span className="text-sm text-gray-400">{t.reviews?.noReviewsYet || "Sin valoraciones aún"}</span>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-slate-800/50 rounded-xl p-5 border border-slate-700/50 text-center">
         <Star className="w-8 h-8 text-gray-600 mx-auto mb-2" />

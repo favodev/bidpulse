@@ -1,6 +1,7 @@
 "use client";
 
 import { Trophy, User, Trash2 } from "lucide-react";
+import Link from "next/link";
 import { Bid } from "@/types/bid.types";
 import { useLanguage } from "@/i18n";
 import { useCurrency } from "@/hooks/useCurrency";
@@ -103,17 +104,21 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
                   }`}
                 >
                   {bid.bidderAvatar ? (
-                    <img
-                      src={bid.bidderAvatar}
-                      alt=""
-                      className="w-full h-full rounded-full object-cover"
-                    />
+                    <Link href={isCurrentUser ? "/profile" : `/users/${bid.bidderId}`}>
+                      <img
+                        src={bid.bidderAvatar}
+                        alt={bid.bidderName}
+                        className="w-full h-full rounded-full object-cover cursor-pointer"
+                      />
+                    </Link>
                   ) : (
-                    <User
-                      className={`w-5 h-5 ${
-                        isWinning ? "text-emerald-400" : "text-gray-400"
-                      }`}
-                    />
+                    <Link href={isCurrentUser ? "/profile" : `/users/${bid.bidderId}`}>
+                      <User
+                        className={`w-5 h-5 ${
+                          isWinning ? "text-emerald-400" : "text-gray-400"
+                        } cursor-pointer`}
+                      />
+                    </Link>
                   )}
                 </div>
 
@@ -123,7 +128,15 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
                       isCurrentUser ? "text-emerald-400" : "text-white"
                     }`}
                   >
-                    {isCurrentUser ? t.auction.you : bid.bidderName}
+                    {isCurrentUser ? (
+                      <Link href="/profile" className="text-inherit">
+                        {t.auction.you}
+                      </Link>
+                    ) : (
+                      <Link href={`/users/${bid.bidderId}`} className="text-inherit">
+                        {bid.bidderName}
+                      </Link>
+                    )}
                     {isWinning && (
                       <span className="ml-2 text-xs text-emerald-400">
                         {t.auction.highestBid}

@@ -125,8 +125,17 @@ export function Navbar() {
                       onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
                     >
-                      <Settings className="w-4 h-4" />
+                      <User className="w-4 h-4" />
                       {t.nav.editProfile}
+                    </Link>
+
+                    <Link
+                      href="/settings"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <Settings className="w-4 h-4" />
+                      {t.nav.settings || "Settings"}
                     </Link>
 
                     <Link
@@ -138,14 +147,8 @@ export function Navbar() {
                       {t.nav.favorites}
                     </Link>
 
-                    <Link
-                      href="/reviews"
-                      onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
-                    >
-                      <Star className="w-4 h-4" />
-                      {t.nav.reviews || "Valoraciones"}
-                    </Link>
+                    {/* Separador visual */}
+                    <div className="my-1 border-t border-slate-700" />
 
                     <button
                       onClick={handleLogout}

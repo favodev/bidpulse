@@ -281,14 +281,14 @@ export default function AuctionDetailPage() {
               {/* Seller info with rating */}
               <div className="flex items-center gap-2 mt-1">
                 <Link
-                  href={`/reviews/seller/${auction.sellerId}`}
+                  href={`/users/${auction.sellerId}`}
                   className="text-gray-500 hover:text-gray-300 transition-colors"
                 >
                   {t.auction.seller}: {auction.sellerName}
                 </Link>
                 {sellerRating && sellerRating.totalReviews > 0 && (
                   <Link
-                    href={`/reviews/seller/${auction.sellerId}`}
+                    href={`/users/${auction.sellerId}`}
                     className="flex items-center gap-1 text-sm hover:opacity-80 transition-opacity"
                   >
                     <StarRating rating={sellerRating.averageRating} size="sm" />
