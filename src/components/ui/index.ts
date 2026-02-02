@@ -2,6 +2,7 @@ export { Input } from "./Input";
 export { Button } from "./Button";
 export { Logo } from "./Logo";
 export { Alert } from "./Alert";
+export { ConfirmModal } from "./ConfirmModal";
 export { ImageCropper } from "./ImageCropper";
 export { LanguageToggle } from "./LanguageToggle";
 export { NotificationCenter } from "./NotificationCenter";

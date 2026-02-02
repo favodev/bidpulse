@@ -6,7 +6,7 @@ import { useLanguage } from "@/i18n";
 import { useCurrency } from "@/hooks/useCurrency";
 import { deleteBid } from "@/services/bid.service";
 import { useState } from "react";
-import { Alert } from "@/components/ui";
+import { Alert, ConfirmModal } from "@/components/ui";
 
 interface BidHistoryProps {
   bids: Bid[];
@@ -17,16 +17,28 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
   const { t, language } = useLanguage();
   const { formatPrice } = useCurrency();
   const [error, setError] = useState("");
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [pendingBid, setPendingBid] = useState<Bid | null>(null);
 
-  const handleDelete = async (bid: Bid) => {
-    const message = t.common?.confirmDelete || "Are you sure you want to delete this bid?";
-    if (!confirm(message)) return;
+  const handleDeleteClick = (bid: Bid) => {
+    setPendingBid(bid);
+    setIsConfirmOpen(true);
+  };
 
-    const res = await deleteBid(bid.auctionId, bid.id!, currentUserId);
+  const handleConfirmDelete = async () => {
+    if (!pendingBid) return;
+    const res = await deleteBid(pendingBid.auctionId, pendingBid.id!, currentUserId);
     if (!res.success) {
       setError(res.error || "Failed to delete");
       setTimeout(() => setError(""), 5000);
     }
+    setIsConfirmOpen(false);
+    setPendingBid(null);
+  };
+
+  const handleCancelDelete = () => {
+    setIsConfirmOpen(false);
+    setPendingBid(null);
   };
 
   if (bids.length === 0) {
@@ -56,6 +68,17 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
         <Trophy className="w-5 h-5 text-emerald-500" />
         {t.auction.bidHistory}
       </h2>
+
+      <ConfirmModal
+        isOpen={isConfirmOpen}
+        title={t.common?.confirm || "Confirmar"}
+        message={t.common?.confirmDelete || "Are you sure you want to delete this bid?"}
+        confirmLabel={t.common?.delete || "Eliminar"}
+        cancelLabel={t.common?.cancel || "Cancelar"}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmVariant="danger"
+      />
 
       {error && <div className="mb-4"><Alert variant="error" message={error} /></div>}
 
@@ -131,9 +154,9 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
 
                 {isCurrentUser && (
                    <button 
-                     onClick={() => handleDelete(bid)}
+                     onClick={() => handleDeleteClick(bid)}
                      className="text-gray-500 hover:text-red-400 transition-colors p-1"
-                     title="Eliminar puja"
+                     title={t.common?.delete || "Eliminar"}
                    >
                      <Trash2 className="w-4 h-4" />
                    </button>

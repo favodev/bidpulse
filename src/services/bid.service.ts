@@ -302,6 +302,8 @@ export async function deleteBid(auctionId: string, bidId: string, userId: string
     const querySnapshot = await getDocs(q);
     const topBids = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bid));
 
+    let bidWasMissing = false;
+
     await runTransaction(db, async (transaction) => {
       const bidRef = doc(db, BIDS_COLLECTION, bidId);
       const auctionRef = doc(db, AUCTIONS_COLLECTION, auctionId);
@@ -309,7 +311,10 @@ export async function deleteBid(auctionId: string, bidId: string, userId: string
       const bidSnap = await transaction.get(bidRef);
       const auctionSnap = await transaction.get(auctionRef);
 
-      if (!bidSnap.exists()) throw new Error("Puja no encontrada");
+      if (!bidSnap.exists()) {
+        bidWasMissing = true;
+        return;
+      }
       if (!auctionSnap.exists()) throw new Error("Subasta no encontrada");
 
       const bid = bidSnap.data() as Bid;
@@ -362,6 +367,10 @@ export async function deleteBid(auctionId: string, bidId: string, userId: string
 
       transaction.delete(bidRef);
     });
+
+    if (bidWasMissing) {
+      return { success: true };
+    }
 
     return { success: true };
   } catch (error: any) {
