@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   Timestamp,
   Unsubscribe,
+  deleteField,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Bid, CreateBidData, BidResult, BID_ERROR_MESSAGES } from "@/types/bid.types";
@@ -291,6 +292,82 @@ export function subscribeToAuctionBids(
       console.error("[BidService] Subscription error:", error);
     }
   );
+}
+
+export async function deleteBid(auctionId: string, bidId: string, userId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    // 1. Obtener las 2 mejores pujas actuales
+    const bidsRef = collection(db, BIDS_COLLECTION);
+    const q = query(bidsRef, where("auctionId", "==", auctionId), orderBy("amount", "desc"), limit(2));
+    const querySnapshot = await getDocs(q);
+    const topBids = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Bid));
+
+    await runTransaction(db, async (transaction) => {
+      const bidRef = doc(db, BIDS_COLLECTION, bidId);
+      const auctionRef = doc(db, AUCTIONS_COLLECTION, auctionId);
+      
+      const bidSnap = await transaction.get(bidRef);
+      const auctionSnap = await transaction.get(auctionRef);
+
+      if (!bidSnap.exists()) throw new Error("Puja no encontrada");
+      if (!auctionSnap.exists()) throw new Error("Subasta no encontrada");
+
+      const bid = bidSnap.data() as Bid;
+      const auction = { id: auctionSnap.id, ...auctionSnap.data() } as Auction;
+
+      if (bid.bidderId !== userId) throw new Error("No tienes permiso para eliminar esta puja");
+
+      // Si estamos eliminando la puja ganadora
+      if (auction.currentBid === bid.amount && auction.highestBidderId === userId) {
+        
+        let newTopBid = null;
+        // topBids[0] debería ser la puja actual (la que borramos)
+        // Por seguridad verificamos si topBids[0] es la que borramos
+        if (topBids.length > 0 && topBids[0].id === bidId) {
+             if (topBids.length > 1) {
+               newTopBid = topBids[1];
+             }
+        } 
+        
+        // Si topBids[0] no es la que borramos, significa que la query de arriba está desactualizada
+        // respecto a la transacción (alguien pujó más alto justo antes).
+        // Pero si auction.currentBid COINCIDE con bid.amount, entonces la subasta DICE que somos winner.
+        // Si topBids[0] no es bidId, hay una inconsistencia o raza rara. 
+        // Asumiremos que si currentBid == bid.amount, RESTAURAMOS.
+
+        if (newTopBid) {
+           transaction.update(auctionRef, {
+             currentBid: newTopBid.amount,
+             highestBidderId: newTopBid.bidderId,
+             highestBidderName: newTopBid.bidderName,
+             // Si newTopBid tiene avatar, también? Auction no guarda winnerAvatar explícito siempre?
+             // Auction type tiene highestBidderName.
+             bidsCount: Math.max(0, auction.bidsCount - 1)
+           });
+        } else {
+           // No quedan pujas
+           transaction.update(auctionRef, {
+             currentBid: auction.startingPrice,
+             highestBidderId: deleteField(),
+             highestBidderName: deleteField(),
+             bidsCount: Math.max(0, auction.bidsCount - 1)
+           });
+        }
+      } else {
+        // Solo actualizar contador
+        transaction.update(auctionRef, {
+             bidsCount: Math.max(0, auction.bidsCount - 1)
+        });
+      }
+
+      transaction.delete(bidRef);
+    });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error deleting bid:", error);
+    return { success: false, error: error.message };
+  }
 }
 
 export function calculateMinBid(currentBid: number): number {

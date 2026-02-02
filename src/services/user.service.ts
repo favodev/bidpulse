@@ -85,12 +85,24 @@ export async function updateUserProfile(
       updatedAt: serverTimestamp(),
     });
 
-    // Actualizar también en Firebase Auth si cambia el nombre
-    if (data.displayName && auth.currentUser) {
-      await updateProfile(auth.currentUser, {
-        displayName: data.displayName,
-        photoURL: data.avatar || auth.currentUser.photoURL || undefined,
-      });
+    // Actualizar también en Firebase Auth
+    if (auth.currentUser) {
+      const updateData: { displayName?: string; photoURL?: string } = {};
+      let shouldUpdate = false;
+
+      if (data.displayName && data.displayName !== auth.currentUser.displayName) {
+        updateData.displayName = data.displayName;
+        shouldUpdate = true;
+      }
+
+      if (data.avatar !== undefined && data.avatar !== auth.currentUser.photoURL) {
+        updateData.photoURL = data.avatar || "";
+        shouldUpdate = true;
+      }
+
+      if (shouldUpdate) {
+        await updateProfile(auth.currentUser, updateData);
+      }
     }
   } catch (error) {
     console.error("[UserService] Error updating profile:", error);

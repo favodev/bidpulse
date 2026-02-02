@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Clock, Users, ArrowLeft, Heart, Share2, Shield, Trophy, Loader2 } from "lucide-react";
+import { Clock, Users, ArrowLeft, Heart, Share2, Shield, Trophy, Loader2, Star } from "lucide-react";
 import { Auction } from "@/types/auction.types";
 import { Bid } from "@/types/bid.types";
 import {
@@ -14,8 +14,12 @@ import {
 } from "@/services/auction.service";
 import { subscribeToAuctionBids } from "@/services/bid.service";
 import { isFavorite, toggleFavorite } from "@/services/favorite.service";
+import { hasReviewForAuction, getSellerRatingSummary } from "@/services/review.service";
+import { SellerRatingSummary } from "@/types/review.types";
 import { Navbar, Footer } from "@/components/layout";
 import { ShareModal } from "@/components/ui/ShareModal";
+import { StarRating } from "@/components/ui/StarRating";
+import { Button } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useLanguage } from "@/i18n";
@@ -41,6 +45,8 @@ export default function AuctionDetailPage() {
   const [isFav, setIsFav] = useState(false);
   const [loadingFav, setLoadingFav] = useState(false);
   const [showWinnerBanner, setShowWinnerBanner] = useState(false);
+  const [hasReview, setHasReview] = useState(false);
+  const [sellerRating, setSellerRating] = useState<SellerRatingSummary | null>(null);
 
   useEffect(() => {
     if (!auctionId) return;
@@ -72,6 +78,32 @@ export default function AuctionDetailPage() {
     }
     checkFavorite();
   }, [user, auctionId]);
+
+  // Verificar si ya dejó review y cargar rating del vendedor
+  useEffect(() => {
+    async function checkReviewAndRating() {
+      if (!auction) return;
+      
+      // Cargar rating del vendedor
+      try {
+        const rating = await getSellerRatingSummary(auction.sellerId);
+        setSellerRating(rating);
+      } catch (err) {
+        console.error("Error loading seller rating:", err);
+      }
+
+      // Verificar si el usuario ganador ya dejó review
+      if (user && auction.status === "ended" && auction.highestBidderId === user.uid) {
+        try {
+          const reviewed = await hasReviewForAuction(user.uid, auctionId);
+          setHasReview(reviewed);
+        } catch (err) {
+          console.error("Error checking review:", err);
+        }
+      }
+    }
+    checkReviewAndRating();
+  }, [auction, user, auctionId]);
 
   // Toggle favorito
   const handleToggleFavorite = async () => {
@@ -246,9 +278,26 @@ export default function AuctionDetailPage() {
                   </button>
                 </div>
               </div>
-              <p className="text-gray-500 mt-1">
-                {t.auction.seller}: {auction.sellerName}
-              </p>
+              {/* Seller info with rating */}
+              <div className="flex items-center gap-2 mt-1">
+                <Link
+                  href={`/reviews/seller/${auction.sellerId}`}
+                  className="text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  {t.auction.seller}: {auction.sellerName}
+                </Link>
+                {sellerRating && sellerRating.totalReviews > 0 && (
+                  <Link
+                    href={`/reviews/seller/${auction.sellerId}`}
+                    className="flex items-center gap-1 text-sm hover:opacity-80 transition-opacity"
+                  >
+                    <StarRating rating={sellerRating.averageRating} size="sm" />
+                    <span className="text-gray-500">
+                      ({sellerRating.totalReviews})
+                    </span>
+                  </Link>
+                )}
+              </div>
             </div>
 
             {/* Precio actual */}
@@ -280,6 +329,46 @@ export default function AuctionDetailPage() {
               <Shield className="w-5 h-5 text-emerald-500" />
               <span>{t.auction.secureTransaction}</span>
             </div>
+
+            {/* Call-to-action para dejar review (solo para ganador) */}
+            {user && auction.status === "ended" && auction.highestBidderId === user.uid && !hasReview && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center shrink-0">
+                    <Star className="w-5 h-5 text-yellow-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-white font-medium">
+                      {t.reviews?.leaveReview || "¡Deja tu valoración!"}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {t.reviews?.leaveReviewDesc || "Comparte tu experiencia con otros usuarios"}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => router.push(`/reviews/create?auctionId=${auctionId}`)}
+                  >
+                    <Star className="w-4 h-4 mr-1" />
+                    {t.reviews?.submitReview || "Valorar"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Mensaje si ya dejó review */}
+            {user && auction.status === "ended" && auction.highestBidderId === user.uid && hasReview && (
+              <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                    <Star className="w-5 h-5 text-emerald-400 fill-emerald-400" />
+                  </div>
+                  <p className="text-emerald-300">
+                    {t.reviews?.thankYou || "¡Gracias por tu valoración!"}
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Descripción */}
             <div>
@@ -327,12 +416,26 @@ export default function AuctionDetailPage() {
             <p className="text-slate-500 text-sm mb-6">
               {t.auction.contactSeller} <strong className="text-slate-300">{auction.sellerName}</strong> {t.auction.forPaymentDelivery}
             </p>
-            <button
-              onClick={() => setShowWinnerBanner(false)}
-              className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors"
-            >
-              {t.auction.understood}
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWinnerBanner(false)}
+                className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl transition-colors"
+              >
+                {t.auction.understood}
+              </button>
+              {!hasReview && (
+                <button
+                  onClick={() => {
+                    setShowWinnerBanner(false);
+                    router.push(`/reviews/create?auctionId=${auctionId}`);
+                  }}
+                  className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  <Star className="w-4 h-4" />
+                  {t.reviews?.submitReview || "Valorar"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

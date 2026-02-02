@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { User, Menu, X, LogOut, Settings, UserPlus, Heart } from "lucide-react";
+import { User, Menu, X, LogOut, Settings, UserPlus, Heart, Star } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuctionAutoFinalize } from "@/hooks/useAuctionAutoFinalize";
 import { Button, LanguageToggle, NotificationCenter, CurrencySelector } from "@/components/ui";
@@ -136,6 +136,15 @@ export function Navbar() {
                     >
                       <Heart className="w-4 h-4" />
                       {t.nav.favorites}
+                    </Link>
+
+                    <Link
+                      href="/reviews"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <Star className="w-4 h-4" />
+                      {t.nav.reviews || "Valoraciones"}
                     </Link>
 
                     <button

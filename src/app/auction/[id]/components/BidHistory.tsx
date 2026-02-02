@@ -1,9 +1,12 @@
 "use client";
 
-import { Trophy, User } from "lucide-react";
+import { Trophy, User, Trash2 } from "lucide-react";
 import { Bid } from "@/types/bid.types";
 import { useLanguage } from "@/i18n";
 import { useCurrency } from "@/hooks/useCurrency";
+import { deleteBid } from "@/services/bid.service";
+import { useState } from "react";
+import { Alert } from "@/components/ui";
 
 interface BidHistoryProps {
   bids: Bid[];
@@ -13,6 +16,18 @@ interface BidHistoryProps {
 export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
   const { t, language } = useLanguage();
   const { formatPrice } = useCurrency();
+  const [error, setError] = useState("");
+
+  const handleDelete = async (bid: Bid) => {
+    const message = t.common?.confirmDelete || "Are you sure you want to delete this bid?";
+    if (!confirm(message)) return;
+
+    const res = await deleteBid(bid.auctionId, bid.id!, currentUserId);
+    if (!res.success) {
+      setError(res.error || "Failed to delete");
+      setTimeout(() => setError(""), 5000);
+    }
+  };
 
   if (bids.length === 0) {
     return (
@@ -41,6 +56,8 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
         <Trophy className="w-5 h-5 text-emerald-500" />
         {t.auction.bidHistory}
       </h2>
+
+      {error && <div className="mb-4"><Alert variant="error" message={error} /></div>}
 
       <div className="space-y-3 max-h-96 overflow-y-auto">
         {bids.map((bid, index) => {
@@ -96,18 +113,30 @@ export default function BidHistory({ bids, currentUserId }: BidHistoryProps) {
                 </div>
               </div>
 
-              <div className="text-right">
-                <p
-                  className={`font-bold ${
-                    isWinning ? "text-emerald-400" : "text-white"
-                  }`}
-                >
-                  {formatPrice(bid.amount)}
-                </p>
-                {bid.previousBid && (
-                  <p className="text-gray-500 text-xs">
-                    +{formatPrice(bid.amount - bid.previousBid)}
+              <div className="flex items-center gap-3">
+                <div className="text-right">
+                  <p
+                    className={`font-bold ${
+                      isWinning ? "text-emerald-400" : "text-white"
+                    }`}
+                  >
+                    {formatPrice(bid.amount)}
                   </p>
+                  {bid.previousBid && (
+                    <p className="text-gray-500 text-xs">
+                      +{formatPrice(bid.amount - bid.previousBid)}
+                    </p>
+                  )}
+                </div>
+
+                {isCurrentUser && (
+                   <button 
+                     onClick={() => handleDelete(bid)}
+                     className="text-gray-500 hover:text-red-400 transition-colors p-1"
+                     title="Eliminar puja"
+                   >
+                     <Trash2 className="w-4 h-4" />
+                   </button>
                 )}
               </div>
             </div>
