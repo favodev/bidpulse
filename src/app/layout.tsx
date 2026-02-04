@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/hooks/useAuth";
 import { NotificationsProvider } from "@/hooks/useNotifications";
 import { CurrencyProvider } from "@/hooks/useCurrency";
+import { MessageCenterProvider } from "@/hooks/useMessageCenter";
 import { LanguageProvider } from "@/i18n";
 import "./globals.css";
 
@@ -41,7 +42,9 @@ export default function RootLayout({
           <CurrencyProvider>
             <AuthProvider>
               <NotificationsProvider>
-                {children}
+                <MessageCenterProvider>
+                  {children}
+                </MessageCenterProvider>
               </NotificationsProvider>
             </AuthProvider>
           </CurrencyProvider>

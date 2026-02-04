@@ -6,7 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useLanguage } from "@/i18n";
 import { Navbar, Footer } from "@/components/layout";
-import { Button } from "@/components/ui";
+import { Button, ReportUserModal } from "@/components/ui";
 import { AuctionCard } from "@/components/auction";
 import { StarRating } from "@/components/ui/StarRating";
 import {
@@ -23,18 +23,24 @@ import { getSellerRatingSummary } from "@/services/review.service";
 import { SellerRatingSummaryCard } from "@/components/review/SellerRatingSummary";
 import { UserProfile } from "@/types/user.types";
 import { Auction } from "@/types/auction.types";
+import { useAuth } from "@/hooks/useAuth";
+import { createUserReport } from "@/services/report.service";
+import type { ReportReason } from "@/types/report.types";
 
 // Página de Perfil Público de Usuario
 export default function UserProfilePage() {
   const params = useParams();
   const id = params?.id as string;
   const { t, language } = useLanguage();
+  const { user } = useAuth();
   
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [auctions, setAuctions] = useState<Auction[]>([]);
   const [ratingSummary, setRatingSummary] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<"listings" | "reviews">("listings");
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reporting, setReporting] = useState(false);
 
   // Cargar datos del usuario y sus subastas
   useEffect(() => {
@@ -85,6 +91,24 @@ export default function UserProfilePage() {
       month: "short",
       year: "numeric",
     });
+  };
+
+  const handleReportUser = async (data: { reason: ReportReason; details: string }) => {
+    if (!user || !userProfile) return;
+    setReporting(true);
+    try {
+      await createUserReport({
+        reporterId: user.uid,
+        reportedUserId: userProfile.id,
+        reason: data.reason,
+        details: data.details,
+      });
+      setShowReportModal(false);
+    } catch (error) {
+      console.error("Error reporting user:", error);
+    } finally {
+      setReporting(false);
+    }
   };
 
   // Estado de carga
@@ -187,7 +211,17 @@ export default function UserProfilePage() {
                 </div>
 
                 {/* Acciones */}
-                <div />
+                <div className="flex items-center gap-2">
+                  {user && user.uid !== userProfile.id && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowReportModal(true)}
+                    >
+                      {t.publicProfile.report || "Reportar usuario"}
+                    </Button>
+                  )}
+                </div>
               </div>
 
               {/* Biografía */}
@@ -285,6 +319,14 @@ export default function UserProfilePage() {
         </div>
       </main>
     <Footer />
+
+      <ReportUserModal
+        isOpen={showReportModal}
+        userName={userProfile.displayName}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={handleReportUser}
+        isSubmitting={reporting}
+      />
     </>
   );
 }

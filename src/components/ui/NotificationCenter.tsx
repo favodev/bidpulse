@@ -14,6 +14,7 @@ import {
   DollarSign,
   AlertCircle,
   Sparkles,
+  MessageCircle,
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useLanguage } from "@/i18n";
@@ -69,6 +70,8 @@ export function NotificationCenter() {
         return <Gavel className={`${iconClass} text-blue-400`} />;
       case "new_bid":
         return <DollarSign className={`${iconClass} text-green-400`} />;
+      case "new_message":
+        return <MessageCircle className={`${iconClass} text-emerald-400`} />;
       case "welcome":
         return <Sparkles className={`${iconClass} text-purple-400`} />;
       default:
@@ -76,11 +79,21 @@ export function NotificationCenter() {
     }
   };
 
-  const handleNotificationClick = async (notificationId: string, auctionId?: string) => {
+  const handleNotificationClick = async (
+    notificationId: string,
+    options?: { auctionId?: string; conversationId?: string }
+  ) => {
     await markAsRead(notificationId);
-    if (auctionId) {
+    if (options?.conversationId) {
+      window.dispatchEvent(
+        new CustomEvent("open-message-center", {
+          detail: { conversationId: options.conversationId },
+        })
+      );
       setIsOpen(false);
+      return;
     }
+    if (options?.auctionId) setIsOpen(false);
   };
 
   const handleMarkAllAsRead = async () => {
@@ -93,6 +106,16 @@ export function NotificationCenter() {
 
   const handleEnablePush = async () => {
     await requestPushPermission();
+  };
+
+  const formatNewMessageBody = (notification: any) => {
+    const template = t.notifications?.newMessageBody;
+    if (template) {
+      return template
+        .replace("{sender}", notification.data?.senderName || "")
+        .replace("{auction}", notification.data?.auctionTitle || "");
+    }
+    return notification.message;
   };
 
   return (
@@ -194,22 +217,46 @@ export function NotificationCenter() {
 
                       {/* Contenido */}
                       <div className="flex-1 min-w-0">
-                        {notification.data?.auctionId ? (
+                        {notification.data?.conversationId ? (
+                          <button
+                            onClick={() =>
+                              handleNotificationClick(notification.id, {
+                                conversationId: notification.data?.conversationId,
+                              })
+                            }
+                            className="block w-full text-left hover:bg-slate-800/50 -m-1 p-1 rounded-lg transition-colors"
+                          >
+                            <p className="text-sm font-medium text-white truncate">
+                              {t.notifications?.newMessageTitle || "Nuevo mensaje"}
+                            </p>
+                            <p className="text-sm text-slate-400 mt-0.5 line-clamp-2">
+                              {formatNewMessageBody(notification)}
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              {notification.createdAt &&
+                                formatDistanceToNow(notification.createdAt.toDate())}
+                            </p>
+                          </button>
+                        ) : notification.data?.auctionId ? (
                           <Link
                             href={`/auction/${notification.data.auctionId}`}
                             onClick={() =>
                               handleNotificationClick(
                                 notification.id,
-                                notification.data?.auctionId
+                                { auctionId: notification.data?.auctionId }
                               )
                             }
                             className="block hover:bg-slate-800/50 -m-1 p-1 rounded-lg transition-colors"
                           >
                             <p className="text-sm font-medium text-white truncate">
-                              {notification.title}
+                              {notification.type === "new_message"
+                                ? t.notifications?.newMessageTitle || "Nuevo mensaje"
+                                : notification.title}
                             </p>
                             <p className="text-sm text-slate-400 mt-0.5 line-clamp-2">
-                              {notification.message}
+                              {notification.type === "new_message"
+                                ? formatNewMessageBody(notification)
+                                : notification.message}
                             </p>
                             <p className="text-xs text-slate-500 mt-1">
                               {notification.createdAt &&
@@ -222,10 +269,14 @@ export function NotificationCenter() {
                             className="cursor-pointer"
                           >
                             <p className="text-sm font-medium text-white truncate">
-                              {notification.title}
+                              {notification.type === "new_message"
+                                ? t.notifications?.newMessageTitle || "Nuevo mensaje"
+                                : notification.title}
                             </p>
                             <p className="text-sm text-slate-400 mt-0.5 line-clamp-2">
-                              {notification.message}
+                              {notification.type === "new_message"
+                                ? formatNewMessageBody(notification)
+                                : notification.message}
                             </p>
                             <p className="text-xs text-slate-500 mt-1">
                               {notification.createdAt &&

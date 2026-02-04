@@ -4,3 +4,5 @@ export * from "./bid.types";
 export * from "./user.types";
 export * from "./notification.types";
 export * from "./review.types";
+export * from "./message.types";
+export * from "./report.types";

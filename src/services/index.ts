@@ -4,3 +4,5 @@ export * from "./bid.service";
 export * from "./user.service";
 export * from "./notification.service";
 export * from "./review.service";
+export * from "./message.service";
+export * from "./report.service";

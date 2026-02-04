@@ -6,6 +6,7 @@ export type NotificationType =
   | "auction_ending"   
   | "auction_ended"    
   | "new_bid"         
+  | "new_message"     
   | "welcome"         
   | "system";          
 
@@ -22,6 +23,9 @@ export interface Notification {
     auctionTitle?: string;
     bidAmount?: number;
     bidderName?: string;
+    conversationId?: string;
+    senderId?: string;
+    senderName?: string;
   };
   
   // Estado

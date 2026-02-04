@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Clock, Users, ArrowLeft, Heart, Share2, Shield, Trophy, Loader2, Star } from "lucide-react";
+import { Clock, Users, ArrowLeft, Heart, Share2, Shield, Trophy, Loader2, Star, MessageCircle } from "lucide-react";
 import { Auction } from "@/types/auction.types";
 import { Bid } from "@/types/bid.types";
 import {
@@ -17,12 +17,14 @@ import {
 import { subscribeToAuctionBids } from "@/services/bid.service";
 import { isFavorite, toggleFavorite } from "@/services/favorite.service";
 import { hasReviewForAuction, getSellerRatingSummary } from "@/services/review.service";
+import { createOrGetConversation } from "@/services/message.service";
 import { SellerRatingSummary } from "@/types/review.types";
 import { Navbar, Footer } from "@/components/layout";
 import { ShareModal } from "@/components/ui/ShareModal";
 import { StarRating } from "@/components/ui/StarRating";
 import { Alert, Button, ConfirmModal } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
+import { useMessageCenter } from "@/hooks/useMessageCenter";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useLanguage } from "@/i18n";
 import BidForm from "./components/BidForm";
@@ -32,6 +34,7 @@ export default function AuctionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { openConversation } = useMessageCenter();
   const { t } = useLanguage();
   const { formatPrice } = useCurrency();
   const auctionId = params.id as string;
@@ -52,6 +55,7 @@ export default function AuctionDetailPage() {
   const [showEndAuctionModal, setShowEndAuctionModal] = useState(false);
   const [endingAuction, setEndingAuction] = useState(false);
   const [endAuctionError, setEndAuctionError] = useState("");
+  const [startingChat, setStartingChat] = useState(false);
 
   useEffect(() => {
     if (!auctionId) return;
@@ -218,6 +222,34 @@ export default function AuctionDetailPage() {
     }
   };
 
+  const handleStartChat = async () => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    if (!auction) return;
+
+    setStartingChat(true);
+    try {
+      const conversationId = await createOrGetConversation({
+        auctionId: auction.id,
+        auctionTitle: auction.title,
+        buyerId: user.uid,
+        buyerName: user.displayName || "Usuario",
+        buyerAvatar: user.photoURL || null,
+        sellerId: auction.sellerId,
+        sellerName: auction.sellerName,
+        sellerAvatar: auction.sellerAvatar || null,
+      });
+
+      openConversation(conversationId);
+    } catch (error) {
+      console.error("Error starting chat:", error);
+    } finally {
+      setStartingChat(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       <Navbar />
@@ -334,6 +366,20 @@ export default function AuctionDetailPage() {
                   </Link>
                 )}
               </div>
+
+              {!isSeller && (
+                <div className="mt-3">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleStartChat}
+                    isLoading={startingChat}
+                    leftIcon={<MessageCircle className="w-4 h-4" />}
+                  >
+                    {t.publicProfile?.message || "Enviar mensaje"}
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Precio actual */}

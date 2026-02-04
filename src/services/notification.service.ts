@@ -97,6 +97,33 @@ export async function notifyNewBid(
 }
 
 /**
+ * Notificar a un usuario de un nuevo mensaje
+ */
+export async function notifyNewMessage(
+  userId: string,
+  conversationId: string,
+  auctionId: string,
+  auctionTitle: string,
+  senderId: string,
+  senderName: string,
+  messageText: string
+): Promise<NotificationResult> {
+  return createNotification({
+    userId,
+    type: "new_message",
+    title: "Nuevo mensaje",
+    message: `${senderName}: ${messageText}`,
+    data: {
+      conversationId,
+      auctionId,
+      auctionTitle,
+      senderId,
+      senderName,
+    },
+  });
+}
+
+/**
  * Notificar al ganador de una subasta
  */
 export async function notifyAuctionWon(
@@ -410,6 +437,7 @@ export function getNotificationIcon(type: NotificationType): string {
     auction_ending: "⏰",
     auction_ended: "🔨",
     new_bid: "💰",
+    new_message: "💬",
     welcome: "👋",
     system: "ℹ️",
   };
@@ -426,6 +454,7 @@ export function getNotificationColor(type: NotificationType): string {
     auction_ending: "text-yellow-400",
     auction_ended: "text-blue-400",
     new_bid: "text-green-400",
+    new_message: "text-emerald-400",
     welcome: "text-purple-400",
     system: "text-slate-400",
   };
