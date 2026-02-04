@@ -5,7 +5,12 @@ import {
   GoogleAuthProvider,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  deleteUser,
   AuthError as FirebaseAuthError,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -31,6 +36,7 @@ const ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   "auth/popup-closed-by-user": "Se cerró la ventana de autenticación.",
   "auth/account-exists-with-different-credential":
     "Ya existe una cuenta con este email usando otro método de autenticación.",
+  "auth/requires-recent-login": "Por seguridad, vuelve a iniciar sesión e intenta nuevamente.",
   unknown: "Ocurrió un error inesperado. Intenta nuevamente.",
 };
 
@@ -80,6 +86,7 @@ export const AuthService = {
       );
 
       await updateProfile(userCredential.user, { displayName });
+      await sendEmailVerification(userCredential.user);
 
       return {
         success: true,
@@ -128,6 +135,94 @@ export const AuthService = {
   async resetPassword(email: string): Promise<AuthResult<void>> {
     try {
       await sendPasswordResetEmail(auth, email);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: handleAuthError(error),
+      };
+    }
+  },
+
+  async changePassword(
+    currentPassword: string,
+    newPassword: string
+  ): Promise<AuthResult<void>> {
+    try {
+      if (!auth.currentUser || !auth.currentUser.email) {
+        return {
+          success: false,
+          error: { code: "unknown", message: "Usuario no autenticado" },
+        };
+      }
+
+      const credential = EmailAuthProvider.credential(
+        auth.currentUser.email,
+        currentPassword
+      );
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await updatePassword(auth.currentUser, newPassword);
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: handleAuthError(error),
+      };
+    }
+  },
+
+  async sendVerificationEmail(): Promise<AuthResult<void>> {
+    try {
+      if (!auth.currentUser) {
+        return {
+          success: false,
+          error: { code: "unknown", message: "Usuario no autenticado" },
+        };
+      }
+
+      await sendEmailVerification(auth.currentUser);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: handleAuthError(error),
+      };
+    }
+  },
+
+  async deleteAccount(currentPassword?: string): Promise<AuthResult<void>> {
+    try {
+      if (!auth.currentUser) {
+        return {
+          success: false,
+          error: { code: "unknown", message: "Usuario no autenticado" },
+        };
+      }
+
+      const isPasswordProvider = auth.currentUser.providerData.some(
+        (provider) => provider.providerId === "password"
+      );
+
+      if (isPasswordProvider && auth.currentUser.email) {
+        if (!currentPassword) {
+          return {
+            success: false,
+            error: {
+              code: "auth/requires-recent-login",
+              message: ERROR_MESSAGES["auth/requires-recent-login"],
+            },
+          };
+        }
+
+        const credential = EmailAuthProvider.credential(
+          auth.currentUser.email,
+          currentPassword
+        );
+        await reauthenticateWithCredential(auth.currentUser, credential);
+      }
+
+      await deleteUser(auth.currentUser);
       return { success: true };
     } catch (error) {
       return {

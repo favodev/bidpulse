@@ -223,7 +223,8 @@ export async function createReview(
         reviewerAvatar: reviewerAvatar || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-        isVerified: true, // Asumimos que es verificado ya que ganó la subasta
+        // Use seller profile `isVerified` instead of assuming verification
+        isVerified: !!sellerData.isVerified,
         isEdited: false,
       };
 

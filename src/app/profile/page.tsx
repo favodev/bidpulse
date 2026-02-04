@@ -12,7 +12,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/layout";
-import { Button, Alert } from "@/components/ui";
+import { Button, Alert, ConfirmModal } from "@/components/ui";
 import { ImageCropper } from "@/components/ui/ImageCropper";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/i18n";
@@ -21,12 +21,13 @@ import {
   createUserProfile,
   updateUserProfile,
   uploadAvatar,
+  deleteUserProfile,
 } from "@/services/user.service";
 import { UserProfile } from "@/types/user.types";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, refreshUser } = useAuth();
+  const { user, refreshUser, changePassword, sendEmailVerification, deleteAccount } = useAuth();
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,6 +36,11 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [info, setInfo] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [sendingVerification, setSendingVerification] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Estado para el cropper
   const [showCropper, setShowCropper] = useState(false);
@@ -46,6 +52,14 @@ export default function ProfilePage() {
     displayName: "",
     bio: "",
   });
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const [deletePassword, setDeletePassword] = useState("");
 
   // Cargar perfil
   useEffect(() => {
@@ -85,6 +99,10 @@ export default function ProfilePage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPasswordForm({ ...passwordForm, [e.target.name]: e.target.value });
   };
 
   const handleSave = async () => {
@@ -174,6 +192,76 @@ export default function ProfilePage() {
     setPendingAvatarBlob(null);
   };
 
+  const handleSendVerification = async () => {
+    if (!user) return;
+    setSendingVerification(true);
+    setError("");
+    setInfo("");
+
+    const result = await sendEmailVerification();
+    if (result.success) {
+      setInfo(t.profile.verificationSent || "Te enviamos un email de verificación.");
+    } else {
+      setError(result.error?.message || t.common.error);
+    }
+
+    setSendingVerification(false);
+  };
+
+  const handleChangePassword = async () => {
+    if (!user) return;
+    setError("");
+    setSuccess("");
+    setChangingPassword(true);
+
+    if (passwordForm.newPassword.length < 6) {
+      setError(t.profile.passwordMinLength || "La contraseña debe tener al menos 6 caracteres");
+      setChangingPassword(false);
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setError(t.profile.passwordMismatch || "Las contraseñas no coinciden");
+      setChangingPassword(false);
+      return;
+    }
+
+    const result = await changePassword(
+      passwordForm.currentPassword,
+      passwordForm.newPassword
+    );
+
+    if (result.success) {
+      setSuccess(t.profile.changePasswordSuccess || "Contraseña actualizada");
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } else {
+      setError(result.error?.message || t.profile.changePasswordError || t.common.error);
+    }
+
+    setChangingPassword(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    setDeletingAccount(true);
+    setError("");
+
+    const result = await deleteAccount(deletePassword || undefined);
+    if (result.success) {
+      try {
+        await deleteUserProfile(user.uid);
+      } catch (err) {
+        console.error("Error deleting profile document:", err);
+      }
+      router.push("/");
+    } else {
+      setError(result.error?.message || t.common.error);
+    }
+
+    setDeletingAccount(false);
+    setShowDeleteModal(false);
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-950">
@@ -197,6 +285,10 @@ export default function ProfilePage() {
     );
   }
 
+  const isPasswordProvider = user.providerData.some(
+    (provider) => provider.providerId === "password"
+  );
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
       <Navbar />
@@ -217,6 +309,7 @@ export default function ProfilePage() {
 
         {error && <Alert variant="error" message={error} className="mb-6" />}
         {success && <Alert variant="success" message={success} className="mb-6" />}
+        {info && <Alert variant="info" message={info} className="mb-6" />}
 
         {/* Avatar */}
         <div className="flex flex-col items-center mb-8">
@@ -267,6 +360,30 @@ export default function ProfilePage() {
               {t.profile.changePhoto}
             </p>
           )}
+        </div>
+
+        {/* Verificación de email */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-white mb-4">
+            {t.profile.emailVerificationTitle || "Verificación de email"}
+          </h2>
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-slate-300 text-sm">
+                {t.profile.email}: {user.email}
+              </p>
+              <p className={`text-sm ${user.emailVerified ? "text-emerald-400" : "text-amber-400"}`}>
+                {user.emailVerified
+                  ? t.profile.emailVerified || "Email verificado"
+                  : t.profile.emailNotVerified || "Email no verificado"}
+              </p>
+            </div>
+            {!user.emailVerified && (
+              <Button onClick={handleSendVerification} isLoading={sendingVerification} size="sm">
+                {t.profile.sendVerification || "Enviar verificación"}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Formulario */}
@@ -332,6 +449,92 @@ export default function ProfilePage() {
             )}
           </Button>
         </div>
+
+        {/* Cambiar contraseña */}
+        {isPasswordProvider && (
+          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mt-8">
+            <h2 className="text-lg font-semibold text-white mb-4">
+              {t.profile.changePasswordTitle || "Cambiar contraseña"}
+            </h2>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">
+                  {t.profile.currentPassword || "Contraseña actual"}
+                </label>
+                <input
+                  name="currentPassword"
+                  type="password"
+                  value={passwordForm.currentPassword}
+                  onChange={handlePasswordChange}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">
+                  {t.profile.newPassword || "Nueva contraseña"}
+                </label>
+                <input
+                  name="newPassword"
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={handlePasswordChange}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-300 mb-1 block">
+                  {t.profile.confirmNewPassword || "Confirmar nueva contraseña"}
+                </label>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={handlePasswordChange}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={handleChangePassword} isLoading={changingPassword} size="sm">
+                  {t.profile.changePassword || "Actualizar contraseña"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Zona de peligro */}
+        <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-6 mt-8">
+          <h2 className="text-lg font-semibold text-red-400 mb-2">
+            {t.profile.deleteAccountTitle || "Eliminar cuenta"}
+          </h2>
+          <p className="text-slate-400 text-sm mb-4">
+            {t.profile.deleteAccountDesc || "Esta acción es irreversible."}
+          </p>
+
+          {isPasswordProvider && (
+            <div className="mb-4">
+              <label className="text-sm text-slate-300 mb-1 block">
+                {t.profile.currentPassword || "Contraseña actual"}
+              </label>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-red-500"
+              />
+            </div>
+          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="border-red-700 text-red-500 hover:bg-red-950/30 hover:border-red-500"
+            onClick={() => setShowDeleteModal(true)}
+            isLoading={deletingAccount}
+          >
+            {t.profile.deleteAccountButton || "Eliminar cuenta"}
+          </Button>
+        </div>
       </main>
 
       {/* Modal de recorte de imagen */}
@@ -343,6 +546,17 @@ export default function ProfilePage() {
           isUploading={false}
         />
       )}
+
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        title={t.profile.deleteAccountConfirmTitle || "Eliminar cuenta"}
+        message={t.profile.deleteAccountConfirmMessage || "¿Seguro que deseas eliminar tu cuenta?"}
+        confirmLabel={t.profile.deleteAccountConfirm || "Eliminar"}
+        cancelLabel={t.common.cancel}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setShowDeleteModal(false)}
+        confirmVariant="danger"
+      />
 
       <Footer />
     </div>

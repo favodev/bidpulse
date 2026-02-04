@@ -3,6 +3,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   serverTimestamp,
 } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
@@ -188,6 +189,16 @@ export async function updateUserSettings(
     });
   } catch (error) {
     console.error("[UserService] Error updating settings:", error);
+    throw error;
+  }
+}
+
+export async function deleteUserProfile(userId: string): Promise<void> {
+  try {
+    const docRef = doc(db, USERS_COLLECTION, userId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error("[UserService] Error deleting profile:", error);
     throw error;
   }
 }

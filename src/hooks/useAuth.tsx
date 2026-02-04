@@ -139,6 +139,48 @@ export function AuthProvider({ children }: AuthProviderProps) {
     []
   );
 
+  const changePassword = useCallback(
+    async (currentPassword: string, newPassword: string): Promise<AuthResult<void>> => {
+      setError(null);
+
+      const result = await AuthService.changePassword(currentPassword, newPassword);
+
+      if (!result.success && result.error) {
+        setError(result.error);
+      }
+
+      return result;
+    },
+    []
+  );
+
+  const sendEmailVerification = useCallback(async (): Promise<AuthResult<void>> => {
+    setError(null);
+
+    const result = await AuthService.sendVerificationEmail();
+
+    if (!result.success && result.error) {
+      setError(result.error);
+    }
+
+    return result;
+  }, []);
+
+  const deleteAccount = useCallback(
+    async (currentPassword?: string): Promise<AuthResult<void>> => {
+      setError(null);
+
+      const result = await AuthService.deleteAccount(currentPassword);
+
+      if (!result.success && result.error) {
+        setError(result.error);
+      }
+
+      return result;
+    },
+    []
+  );
+
   const refreshUser = useCallback(() => {
     if (auth.currentUser) {
       auth.currentUser.reload().then(() => {
@@ -159,10 +201,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       loginWithGoogle,
       logout,
       resetPassword,
+      changePassword,
+      sendEmailVerification,
+      deleteAccount,
       clearError,
       refreshUser,
     }),
-    [user, userAvatar, loading, error, login, signup, loginWithGoogle, logout, resetPassword, clearError, refreshUser]
+    [user, userAvatar, loading, error, login, signup, loginWithGoogle, logout, resetPassword, changePassword, sendEmailVerification, deleteAccount, clearError, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

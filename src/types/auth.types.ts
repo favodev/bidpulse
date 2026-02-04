@@ -30,6 +30,7 @@ export type AuthErrorCode =
   | "auth/network-request-failed"
   | "auth/popup-closed-by-user"
   | "auth/account-exists-with-different-credential"
+  | "auth/requires-recent-login"
   | "unknown";
 
 export interface AuthError {
@@ -53,6 +54,9 @@ export interface AuthContextValue {
   loginWithGoogle: () => Promise<AuthResult>;
   logout: () => Promise<AuthResult<void>>;
   resetPassword: (email: string) => Promise<AuthResult<void>>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult<void>>;
+  sendEmailVerification: () => Promise<AuthResult<void>>;
+  deleteAccount: (currentPassword?: string) => Promise<AuthResult<void>>;
   clearError: () => void;
   refreshUser: () => void;
 }
