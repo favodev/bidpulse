@@ -216,7 +216,7 @@ export function MessageCenterProvider({ children }: MessageCenterProviderProps) 
 
       <div className="fixed bottom-6 right-6 z-50" ref={panelRef}>
         {isOpen && (
-          <div className="mb-4 w-[22rem] sm:w-[24rem] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="absolute bottom-16 right-0 w-[22rem] sm:w-[24rem] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
               {activeConversation ? (
                 <div className="flex items-center gap-2">
