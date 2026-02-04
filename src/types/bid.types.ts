@@ -11,7 +11,7 @@ export interface Bid {
   previousBid?: number;
   createdAt: Timestamp;
   isWinning: boolean;
-  isAutoBid: boolean; 
+  isAutoBid?: boolean; 
 }
 
 export interface CreateBidData {
@@ -20,6 +20,20 @@ export interface CreateBidData {
   bidderName: string;
   bidderAvatar?: string;
   amount: number;
+  maxAutoBid?: number;
+  isAutoBid?: boolean;
+}
+
+export interface AutoBidConfig {
+  id: string;
+  auctionId: string;
+  bidderId: string;
+  bidderName: string;
+  bidderAvatar?: string;
+  maxAmount: number;
+  active: boolean;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export interface BidResult {

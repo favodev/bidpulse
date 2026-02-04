@@ -9,19 +9,23 @@ import {
   limit,
   onSnapshot,
   runTransaction,
+  setDoc,
   serverTimestamp,
   Timestamp,
   Unsubscribe,
   deleteField,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Bid, CreateBidData, BidResult, BID_ERROR_MESSAGES } from "@/types/bid.types";
+import { Bid, CreateBidData, BidResult, BID_ERROR_MESSAGES, AutoBidConfig } from "@/types/bid.types";
 import { Auction } from "@/types/auction.types";
 import { notifyOutbid, notifyNewBid } from "./notification.service";
 
 const BIDS_COLLECTION = "bids";
 const AUCTIONS_COLLECTION = "auctions";
+const AUTO_BIDS_COLLECTION = "autoBids";
 const bidsRef = collection(db, BIDS_COLLECTION);
+const autoBidsRef = collection(db, AUTO_BIDS_COLLECTION);
 
 
 const MIN_BID_INCREMENT_PERCENT = 5;
@@ -31,7 +35,140 @@ const MIN_BID_INCREMENT_ABSOLUTE = 1;
 const ANTI_SNIPING_THRESHOLD = 60;
 const ANTI_SNIPING_EXTENSION = 120;
 
-export async function placeBid(data: CreateBidData): Promise<BidResult> {
+const MAX_AUTO_BID_ITERATIONS = 5;
+
+interface PlaceBidOptions {
+  triggerAutoBids?: boolean;
+  isAutoBid?: boolean;
+}
+
+function computeAutoBidTarget(
+  auction: Auction,
+  autoBids: AutoBidConfig[]
+): { bidder: AutoBidConfig; amount: number } | null {
+  if (auction.status !== "active") return null;
+
+  const eligible = autoBids
+    .filter((config) => config.active && config.maxAmount > auction.currentBid)
+    .sort((a, b) => b.maxAmount - a.maxAmount);
+
+  if (eligible.length === 0) return null;
+
+  const top = eligible[0];
+  const second = eligible.find((b) => b.bidderId !== top.bidderId) || null;
+
+  const increment = calculateMinBid(auction.currentBid) - auction.currentBid;
+  const targetAmount = Math.min(
+    top.maxAmount,
+    second ? second.maxAmount + increment : auction.currentBid + increment
+  );
+
+  if (targetAmount <= auction.currentBid) return null;
+
+  if (auction.highestBidderId === top.bidderId && targetAmount <= auction.currentBid) {
+    return null;
+  }
+
+  return { bidder: top, amount: targetAmount };
+}
+
+async function getAutoBidsForAuction(auctionId: string): Promise<AutoBidConfig[]> {
+  const q = query(
+    autoBidsRef,
+    where("auctionId", "==", auctionId),
+    where("active", "==", true)
+  );
+
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(
+    (docSnap) => ({ id: docSnap.id, ...docSnap.data() } as AutoBidConfig)
+  );
+}
+
+export async function getUserAutoBid(
+  auctionId: string,
+  bidderId: string
+): Promise<AutoBidConfig | null> {
+  const autoBidId = `${auctionId}_${bidderId}`;
+  const autoBidRef = doc(db, AUTO_BIDS_COLLECTION, autoBidId);
+  const autoBidSnap = await getDoc(autoBidRef);
+
+  if (!autoBidSnap.exists()) return null;
+  return { id: autoBidSnap.id, ...autoBidSnap.data() } as AutoBidConfig;
+}
+
+export async function setAutoBidConfig(
+  auctionId: string,
+  bidderId: string,
+  bidderName: string,
+  maxAmount: number,
+  bidderAvatar?: string
+): Promise<void> {
+  const autoBidId = `${auctionId}_${bidderId}`;
+  const autoBidRef = doc(db, AUTO_BIDS_COLLECTION, autoBidId);
+
+  await setDoc(
+    autoBidRef,
+    {
+      auctionId,
+      bidderId,
+      bidderName,
+      bidderAvatar: bidderAvatar || "",
+      maxAmount,
+      active: true,
+      updatedAt: serverTimestamp(),
+      createdAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+}
+
+export async function removeAutoBid(auctionId: string, bidderId: string): Promise<void> {
+  const autoBidId = `${auctionId}_${bidderId}`;
+  const autoBidRef = doc(db, AUTO_BIDS_COLLECTION, autoBidId);
+  await deleteDoc(autoBidRef);
+}
+
+async function processAutoBids(auctionId: string): Promise<void> {
+  for (let i = 0; i < MAX_AUTO_BID_ITERATIONS; i++) {
+    const auctionRef = doc(db, AUCTIONS_COLLECTION, auctionId);
+    const auctionSnap = await getDoc(auctionRef);
+
+    if (!auctionSnap.exists()) return;
+
+    const auction = { id: auctionSnap.id, ...auctionSnap.data() } as Auction;
+
+    if (auction.status !== "active") return;
+
+    const autoBids = await getAutoBidsForAuction(auctionId);
+    const nextAutoBid = computeAutoBidTarget(auction, autoBids);
+
+    if (!nextAutoBid) return;
+
+    const { bidder, amount } = nextAutoBid;
+
+    if (bidder.bidderId === auction.highestBidderId && amount <= auction.currentBid) {
+      return;
+    }
+
+    await placeBidInternal(
+      {
+        auctionId,
+        bidderId: bidder.bidderId,
+        bidderName: bidder.bidderName,
+        bidderAvatar: bidder.bidderAvatar,
+        amount,
+        isAutoBid: true,
+      },
+      { triggerAutoBids: false, isAutoBid: true }
+    );
+  }
+}
+
+async function placeBidInternal(
+  data: CreateBidData,
+  options: PlaceBidOptions = {}
+): Promise<BidResult> {
   const { auctionId, bidderId, bidderName, amount } = data;
 
   try {
@@ -123,6 +260,7 @@ export async function placeBid(data: CreateBidData): Promise<BidResult> {
         previousBid: auction.currentBid,
         createdAt: serverTimestamp(),
         isWinning: true,
+        isAutoBid: options.isAutoBid ?? data.isAutoBid ?? false,
       };
 
       // Agregar avatar si existe
@@ -193,6 +331,20 @@ export async function placeBid(data: CreateBidData): Promise<BidResult> {
       delete (result as Record<string, unknown>)._notificationData;
     }
 
+    if (result.success && data.maxAutoBid && data.maxAutoBid > 0) {
+      await setAutoBidConfig(
+        auctionId,
+        bidderId,
+        bidderName,
+        data.maxAutoBid,
+        data.bidderAvatar
+      );
+    }
+
+    if (result.success && options.triggerAutoBids !== false) {
+      await processAutoBids(auctionId);
+    }
+
     return result;
   } catch (error) {
     console.error("[BidService] Error placing bid:", error);
@@ -204,6 +356,10 @@ export async function placeBid(data: CreateBidData): Promise<BidResult> {
       },
     };
   }
+}
+
+export async function placeBid(data: CreateBidData): Promise<BidResult> {
+  return placeBidInternal(data, { triggerAutoBids: true, isAutoBid: data.isAutoBid });
 }
 
 export async function getAuctionBids(

@@ -54,6 +54,8 @@ export default function CreateAuctionPage() {
     reservePrice: "",
     bidIncrement: "1",
     duration: "7",
+    startOption: "now",
+    scheduledStartTime: "",
     images: [] as string[],
   });
 
@@ -132,7 +134,25 @@ export default function CreateAuctionPage() {
 
     try {
       const now = new Date();
-      const endDate = new Date(now.getTime() + parseInt(formData.duration) * 24 * 60 * 60 * 1000);
+      const isScheduled = formData.startOption === "scheduled";
+      let startDate = now;
+
+      if (isScheduled) {
+        if (!formData.scheduledStartTime) {
+          setError(t.createAuction.startTimeRequired || "Selecciona una fecha de inicio");
+          setLoading(false);
+          return;
+        }
+
+        startDate = new Date(formData.scheduledStartTime);
+        if (isNaN(startDate.getTime()) || startDate.getTime() <= now.getTime()) {
+          setError(t.createAuction.startTimeInvalid || "La fecha de inicio debe ser futura");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const endDate = new Date(startDate.getTime() + parseInt(formData.duration) * 24 * 60 * 60 * 1000);
 
       const auctionId = await createAuction(
         {
@@ -143,7 +163,7 @@ export default function CreateAuctionPage() {
           startingPrice: parseFloat(formData.startingPrice),
           reservePrice: formData.reservePrice ? parseFloat(formData.reservePrice) : undefined,
           bidIncrement: parseFloat(formData.bidIncrement),
-          startTime: now,
+          startTime: startDate,
           endTime: endDate,
         },
         user.uid,
@@ -254,6 +274,32 @@ export default function CreateAuctionPage() {
               onChange={handleChange}
               placeholder="500.00"
             />
+          </div>
+
+          {/* Programación */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-300">
+              {t.createAuction.startOption || "Inicio"}
+            </label>
+            <select
+              name="startOption"
+              value={formData.startOption}
+              onChange={handleChange}
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500"
+            >
+              <option value="now">{t.createAuction.startNow || "Iniciar ahora"}</option>
+              <option value="scheduled">{t.createAuction.schedule || "Programar"}</option>
+            </select>
+
+            {formData.startOption === "scheduled" && (
+              <Input
+                label={t.createAuction.startDateTime || "Fecha y hora de inicio"}
+                name="scheduledStartTime"
+                type="datetime-local"
+                value={formData.scheduledStartTime}
+                onChange={handleChange}
+              />
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

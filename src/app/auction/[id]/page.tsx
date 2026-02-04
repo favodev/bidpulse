@@ -11,6 +11,8 @@ import {
   formatTimeRemaining,
   getTimeRemaining,
   checkAndFinalizeAuction,
+  checkAndActivateAuction,
+  endAuctionEarly,
 } from "@/services/auction.service";
 import { subscribeToAuctionBids } from "@/services/bid.service";
 import { isFavorite, toggleFavorite } from "@/services/favorite.service";
@@ -19,7 +21,7 @@ import { SellerRatingSummary } from "@/types/review.types";
 import { Navbar, Footer } from "@/components/layout";
 import { ShareModal } from "@/components/ui/ShareModal";
 import { StarRating } from "@/components/ui/StarRating";
-import { Button } from "@/components/ui";
+import { Alert, Button, ConfirmModal } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useLanguage } from "@/i18n";
@@ -47,13 +49,17 @@ export default function AuctionDetailPage() {
   const [showWinnerBanner, setShowWinnerBanner] = useState(false);
   const [hasReview, setHasReview] = useState(false);
   const [sellerRating, setSellerRating] = useState<SellerRatingSummary | null>(null);
+  const [showEndAuctionModal, setShowEndAuctionModal] = useState(false);
+  const [endingAuction, setEndingAuction] = useState(false);
+  const [endAuctionError, setEndAuctionError] = useState("");
 
   useEffect(() => {
     if (!auctionId) return;
 
     const unsubscribe = subscribeToAuction(auctionId, async (data) => {
       if (data) {
-        const finalizedAuction = await checkAndFinalizeAuction(data);
+        const activatedAuction = await checkAndActivateAuction(data);
+        const finalizedAuction = await checkAndFinalizeAuction(activatedAuction);
         setAuction(finalizedAuction);
         
         // Verificar si el usuario ganó la subasta
@@ -137,6 +143,16 @@ export default function AuctionDetailPage() {
     if (!auction) return;
 
     const updateTime = () => {
+      if (auction.status === "scheduled") {
+        const remaining = getTimeRemaining(auction.startTime);
+        if (remaining.total <= 0) {
+          setTimeRemaining(t.auction.startingNow || t.auction.live);
+        } else {
+          setTimeRemaining(`${t.auction.startsIn || "Comienza en"} ${formatTimeRemaining(auction.startTime)}`);
+        }
+        return;
+      }
+
       const remaining = getTimeRemaining(auction.endTime);
       if (remaining.total <= 0) {
         setTimeRemaining(t.auction.ended);
@@ -181,6 +197,26 @@ export default function AuctionDetailPage() {
   }
 
   const isEnding = getTimeRemaining(auction.endTime).total < 300000; 
+  const isSeller = user?.uid === auction.sellerId;
+
+  const handleEndAuctionEarly = async () => {
+    if (!auction || !user) return;
+    setEndingAuction(true);
+    setEndAuctionError("");
+
+    try {
+      const success = await endAuctionEarly(auction.id, user.uid);
+      if (!success) {
+        setEndAuctionError(t.auction.endEarlyError || "No se pudo finalizar la subasta");
+      }
+    } catch (err) {
+      console.error("Error ending auction early:", err);
+      setEndAuctionError(t.auction.endEarlyError || "No se pudo finalizar la subasta");
+    } finally {
+      setEndingAuction(false);
+      setShowEndAuctionModal(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col">
@@ -321,6 +357,25 @@ export default function AuctionDetailPage() {
               </div>
             </div>
 
+            {/* Acciones del vendedor */}
+            {isSeller && auction.status === "active" && (
+              <div className="bg-slate-900 rounded-2xl p-6 space-y-3">
+                <p className="text-gray-300 text-sm">
+                  {t.auction.sellerActions || "Acciones del vendedor"}
+                </p>
+                {endAuctionError && <Alert variant="error" message={endAuctionError} />}
+                <Button
+                  variant="outline"
+                  className="border-red-500/60 text-red-400 hover:text-red-300 hover:border-red-400"
+                  onClick={() => setShowEndAuctionModal(true)}
+                  isLoading={endingAuction}
+                  fullWidth
+                >
+                  {t.auction.endEarly || "Finalizar subasta"}
+                </Button>
+              </div>
+            )}
+
             {/* Formulario de puja */}
             <BidForm auction={auction} />
 
@@ -396,6 +451,17 @@ export default function AuctionDetailPage() {
         onClose={() => setShowShareModal(false)}
         title={auction?.title || ""}
         url={typeof window !== "undefined" ? window.location.href : ""}
+      />
+
+      <ConfirmModal
+        isOpen={showEndAuctionModal}
+        title={t.auction.endEarlyTitle || "Finalizar subasta"}
+        message={t.auction.endEarlyMessage || "¿Seguro que quieres finalizar la subasta ahora?"}
+        confirmLabel={t.auction.endEarlyConfirm || "Finalizar"}
+        cancelLabel={t.common?.cancel || "Cancelar"}
+        onConfirm={handleEndAuctionEarly}
+        onCancel={() => setShowEndAuctionModal(false)}
+        confirmVariant="danger"
       />
 
       {/* Banner de ganador */}

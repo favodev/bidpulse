@@ -33,8 +33,11 @@ export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
   const { t } = useLanguage();
   const { formatPrice } = useCurrency();
   const isEnded = auction.status === "ended";
-  const timeRemaining = formatTimeRemaining(auction.endTime, t.auction.ended);
-  const isEndingSoon = !isEnded && auction.endTime.toDate().getTime() - Date.now() < 3600000;
+  const isScheduled = auction.status === "scheduled";
+  const timeRemaining = isScheduled
+    ? formatTimeRemaining(auction.startTime, t.auction.startsIn || "Comienza pronto")
+    : formatTimeRemaining(auction.endTime, t.auction.ended);
+  const isEndingSoon = !isEnded && !isScheduled && auction.endTime.toDate().getTime() - Date.now() < 3600000;
 
   // Obtener etiqueta de categoría traducida
   const categoryKey = auction.category as keyof typeof t.categories;
@@ -58,7 +61,11 @@ export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
           )}
 
           {/* Badge de estado */}
-          {isEnded ? (
+          {isScheduled ? (
+            <div className="absolute top-3 left-3 bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+              {t.auction.scheduled}
+            </div>
+          ) : isEnded ? (
             <div className="absolute top-3 left-3 bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded-full">
               {t.auction.ended}
             </div>
@@ -94,7 +101,11 @@ export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
             <div className="text-right">
               <p className="text-gray-500 text-xs flex items-center gap-1 justify-end">
                 <Clock className="w-3 h-3" />
-                {isEnded ? t.auction.ended : t.auction.timeRemaining}
+                {isScheduled
+                  ? t.auction.startsIn || "Comienza en"
+                  : isEnded
+                  ? t.auction.ended
+                  : t.auction.timeRemaining}
               </p>
               <p className={`font-medium ${isEndingSoon ? "text-red-400" : "text-gray-300"} ${compact ? "text-sm" : ""}`}>
                 {timeRemaining}

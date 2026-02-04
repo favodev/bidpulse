@@ -146,6 +146,8 @@ export async function createAuction(
 ): Promise<string> {
   try {
     const now = serverTimestamp();
+    const nowDate = new Date();
+    const isScheduled = data.startTime.getTime() > nowDate.getTime();
 
     const auctionData: Record<string, unknown> = {
       title: data.title,
@@ -160,7 +162,7 @@ export async function createAuction(
       currentBid: data.startingPrice,
       bidsCount: 0,
       watchersCount: 0,
-      status: "active" as AuctionStatus,
+      status: (isScheduled ? "scheduled" : "active") as AuctionStatus,
       startTime: Timestamp.fromDate(data.startTime),
       endTime: Timestamp.fromDate(data.endTime),
       createdAt: now,
@@ -316,6 +318,9 @@ export async function finalizeAuction(auctionId: string): Promise<boolean> {
 
     await updateAuction(auctionId, {
       status: "ended" as AuctionStatus,
+      winnerId: auction.highestBidderId,
+      winnerName: auction.highestBidderName,
+      finalPrice: auction.currentBid,
     });
 
     console.log(`[AuctionService] Auction ${auctionId} finalized`);
@@ -347,6 +352,9 @@ export async function finalizeExpiredAuctions(): Promise<number> {
         
         await updateDoc(doc(db, AUCTIONS_COLLECTION, docSnap.id), {
           status: "ended" as AuctionStatus,
+          winnerId: auctionData.highestBidderId,
+          winnerName: auctionData.highestBidderName,
+          finalPrice: auctionData.currentBid,
           updatedAt: serverTimestamp(),
         });
         finalizedCount++;
@@ -397,8 +405,109 @@ export async function checkAndFinalizeAuction(auction: Auction): Promise<Auction
 
   if (isExpired && isActive) {
     await finalizeAuction(auction.id);
-    return { ...auction, status: "ended" };
+    return {
+      ...auction,
+      status: "ended",
+      winnerId: auction.highestBidderId,
+      winnerName: auction.highestBidderName,
+      finalPrice: auction.currentBid,
+    };
   }
 
   return auction;
+}
+
+export async function activateScheduledAuctions(): Promise<number> {
+  try {
+    const now = Timestamp.now();
+
+    const q = query(
+      auctionsRef,
+      where("status", "==", "scheduled"),
+      where("startTime", "<=", now),
+      limit(50)
+    );
+
+    const querySnapshot = await getDocs(q);
+    let activatedCount = 0;
+
+    const updatePromises = querySnapshot.docs.map(async (docSnap) => {
+      try {
+        await updateDoc(doc(db, AUCTIONS_COLLECTION, docSnap.id), {
+          status: "active" as AuctionStatus,
+          updatedAt: serverTimestamp(),
+        });
+        activatedCount++;
+      } catch (err) {
+        console.error(`[AuctionService] Failed to activate ${docSnap.id}:`, err);
+      }
+    });
+
+    await Promise.all(updatePromises);
+
+    if (activatedCount > 0) {
+      console.log(`[AuctionService] Activated ${activatedCount} scheduled auctions`);
+    }
+
+    return activatedCount;
+  } catch (error) {
+    console.error("[AuctionService] Error activating scheduled auctions:", error);
+    return 0;
+  }
+}
+
+export async function checkAndActivateAuction(auction: Auction): Promise<Auction> {
+  const now = Timestamp.now();
+  const shouldActivate = auction.status === "scheduled" && auction.startTime.toMillis() <= now.toMillis();
+
+  if (shouldActivate) {
+    await updateAuction(auction.id, {
+      status: "active" as AuctionStatus,
+    });
+    return { ...auction, status: "active" };
+  }
+
+  return auction;
+}
+
+export async function endAuctionEarly(
+  auctionId: string,
+  sellerId: string
+): Promise<boolean> {
+  try {
+    const auction = await getAuction(auctionId);
+    if (!auction) return false;
+
+    if (auction.sellerId !== sellerId || auction.status !== "active") return false;
+
+    await updateAuction(auctionId, {
+      status: "ended" as AuctionStatus,
+      endTime: Timestamp.now(),
+      winnerId: auction.highestBidderId,
+      winnerName: auction.highestBidderName,
+      finalPrice: auction.currentBid,
+    });
+
+    if (auction.highestBidderId) {
+      notifyAuctionWon(
+        auction.highestBidderId,
+        auctionId,
+        auction.title,
+        auction.currentBid
+      ).catch((err) => console.error("[AuctionService] Error notifying winner:", err));
+    }
+
+    notifyAuctionEnded(
+      auction.sellerId,
+      auctionId,
+      auction.title,
+      auction.currentBid,
+      auction.highestBidderName
+    ).catch((err) => console.error("[AuctionService] Error notifying seller:", err));
+
+    return true;
+  } catch (error) {
+    console.error("[AuctionService] Error ending auction early:", error);
+    return false;
+  }
 }

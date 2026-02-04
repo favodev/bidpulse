@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { finalizeExpiredAuctions } from "@/services/auction.service";
+import { finalizeExpiredAuctions, activateScheduledAuctions } from "@/services/auction.service";
 
 const CHECK_INTERVAL = 60 * 1000; 
 
@@ -16,6 +16,7 @@ export function useAuctionAutoFinalize() {
       
       isRunningRef.current = true;
       try {
+        await activateScheduledAuctions();
         await finalizeExpiredAuctions();
       } catch (error) {
         console.error("[useAuctionAutoFinalize] Error:", error);
