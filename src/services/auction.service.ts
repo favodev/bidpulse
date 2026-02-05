@@ -15,7 +15,7 @@ import {
   Timestamp,
   Unsubscribe,
 } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import {
   Auction,
   AuctionStatus,
@@ -475,6 +475,23 @@ export async function endAuctionEarly(
   sellerId: string
 ): Promise<boolean> {
   try {
+    const token = await auth.currentUser?.getIdToken();
+    if (token) {
+      const response = await fetch(`/api/auction/${auctionId}/end`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        return true;
+      }
+
+      const errorPayload = await response.json().catch(() => null);
+      console.warn("[AuctionService] Server end-auction failed, falling back:", errorPayload);
+    }
+
     const auction = await getAuction(auctionId);
     if (!auction) return false;
 

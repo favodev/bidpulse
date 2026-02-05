@@ -5,6 +5,7 @@ import { NotificationsProvider } from "@/hooks/useNotifications";
 import { CurrencyProvider } from "@/hooks/useCurrency";
 import { MessageCenterProvider } from "@/hooks/useMessageCenter";
 import { LanguageProvider } from "@/i18n";
+import { PwaRegister } from "@/components/ui/PwaRegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -21,6 +22,8 @@ export const metadata: Metadata = {
   title: "BidPulse",
   description: "Subastas en tiempo real de alto rendimiento con BidPulse. Puja, compite y gana.",
   keywords: ["subastas", "tiempo real", "pujas", "subastas online"],
+  manifest: "/manifest.json",
+  themeColor: "#0f172a",
   icons: {
     icon: "/assets/logo.png",
     shortcut: "/assets/logo.png",
@@ -44,6 +47,7 @@ export default function RootLayout({
               <NotificationsProvider>
                 <MessageCenterProvider>
                   {children}
+                  <PwaRegister />
                 </MessageCenterProvider>
               </NotificationsProvider>
             </AuthProvider>

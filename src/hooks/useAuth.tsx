@@ -22,6 +22,7 @@ import {
 } from "@/types/auth.types";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const SESSION_COOKIE_NAME = "bp_session";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -32,6 +33,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
+
+  const setSessionCookie = useCallback((token?: string) => {
+    if (typeof document === "undefined") return;
+    const maxAge = token ? 60 * 60 : 0;
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    const value = token ? encodeURIComponent(token) : "";
+    document.cookie = `${SESSION_COOKIE_NAME}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`;
+  }, []);
 
   // Cargar avatar del usuario desde Firestore
   const loadUserAvatar = useCallback(async (userId: string) => {
@@ -49,14 +58,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(firebaseUser);
       if (firebaseUser) {
         loadUserAvatar(firebaseUser.uid);
+        firebaseUser
+          .getIdToken()
+          .then((token) => setSessionCookie(token))
+          .catch(() => setSessionCookie());
       } else {
         setUserAvatar(null);
+        setSessionCookie();
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [loadUserAvatar]);
+  }, [loadUserAvatar, setSessionCookie]);
 
   const clearError = useCallback(() => {
     setError(null);
