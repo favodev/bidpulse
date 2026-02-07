@@ -10,6 +10,9 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { sanitizeContactForm } from "@/lib/sanitize";
+import { validateContactForm } from "@/lib/validation";
+import { checkContactRateLimit } from "@/lib/rateLimit";
 
 const CONTACT_COLLECTION = "contact_messages";
 
@@ -36,14 +39,29 @@ export async function sendContactMessage(data: {
   userId?: string;
 }): Promise<string> {
   try {
+    // Rate limiting
+    const rateCheck = checkContactRateLimit(data.userId || data.email);
+    if (!rateCheck.allowed) {
+      throw new Error(rateCheck.message || "Demasiados mensajes. Intenta más tarde.");
+    }
+
+    // Validación server-side
+    const validation = validateContactForm(data as unknown as Record<string, unknown>);
+    if (!validation.valid) {
+      throw new Error(validation.errors[0]);
+    }
+
+    // Sanitización
+    const sanitized = sanitizeContactForm(data);
+
     // 1. Guardar en Firestore
     const contactRef = collection(db, CONTACT_COLLECTION);
     
     const docRef = await addDoc(contactRef, {
-      name: data.name,
-      email: data.email,
-      subject: data.subject,
-      message: data.message,
+      name: sanitized.name,
+      email: sanitized.email,
+      subject: sanitized.subject,
+      message: sanitized.message,
       userId: data.userId || null,
       status: "pending",
       createdAt: serverTimestamp(),

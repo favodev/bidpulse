@@ -23,6 +23,8 @@ import {
   AuctionFilters,
 } from "@/types/auction.types";
 import { notifyAuctionWon, notifyAuctionEnded } from "./notification.service";
+import { sanitizeText, sanitizeMultiline, sanitizeNumber } from "@/lib/sanitize";
+import { validateCreateAuction } from "@/lib/validation";
 
 const AUCTIONS_COLLECTION = "auctions";
 const auctionsRef = collection(db, AUCTIONS_COLLECTION);
@@ -145,21 +147,45 @@ export async function createAuction(
   sellerAvatar?: string
 ): Promise<string> {
   try {
+    // Validación server-side
+    const validation = validateCreateAuction({
+      ...data,
+      startTime: data.startTime,
+      endTime: data.endTime,
+    } as unknown as Record<string, unknown>);
+    if (!validation.valid) {
+      throw new Error(validation.errors[0]);
+    }
+
+    // Sanitización de inputs
+    const sanitizedTitle = sanitizeText(data.title).slice(0, 200);
+    const sanitizedDescription = sanitizeMultiline(data.description).slice(0, 5000);
+    const sanitizedSellerName = sanitizeText(sellerName).slice(0, 100);
+    const sanitizedStartingPrice = sanitizeNumber(data.startingPrice);
+    const sanitizedBidIncrement = sanitizeNumber(data.bidIncrement);
+
+    if (isNaN(sanitizedStartingPrice) || sanitizedStartingPrice <= 0) {
+      throw new Error("Precio inicial inválido");
+    }
+    if (isNaN(sanitizedBidIncrement) || sanitizedBidIncrement <= 0) {
+      throw new Error("Incremento de puja inválido");
+    }
+
     const now = serverTimestamp();
     const nowDate = new Date();
     const isScheduled = data.startTime.getTime() > nowDate.getTime();
 
     const auctionData: Record<string, unknown> = {
-      title: data.title,
-      description: data.description,
+      title: sanitizedTitle,
+      description: sanitizedDescription,
       category: data.category,
       images: data.images,
-      startingPrice: data.startingPrice,
-      bidIncrement: data.bidIncrement,
+      startingPrice: sanitizedStartingPrice,
+      bidIncrement: sanitizedBidIncrement,
       sellerId,
-      sellerName,
+      sellerName: sanitizedSellerName,
       sellerAvatar: sellerAvatar || "",
-      currentBid: data.startingPrice,
+      currentBid: sanitizedStartingPrice,
       bidsCount: 0,
       watchersCount: 0,
       status: (isScheduled ? "scheduled" : "active") as AuctionStatus,
@@ -171,7 +197,10 @@ export async function createAuction(
 
     // Solo agregar reservePrice si tiene valor
     if (data.reservePrice !== undefined && data.reservePrice !== null) {
-      auctionData.reservePrice = data.reservePrice;
+      const sanitizedReservePrice = sanitizeNumber(data.reservePrice);
+      if (!isNaN(sanitizedReservePrice) && sanitizedReservePrice > 0) {
+        auctionData.reservePrice = sanitizedReservePrice;
+      }
     }
 
     const docRef = await addDoc(auctionsRef, auctionData);

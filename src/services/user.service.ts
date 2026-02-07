@@ -9,6 +9,8 @@ import {
 import { updateProfile } from "firebase/auth";
 import { db, auth } from "@/lib/firebase";
 import { UserProfile, UserSettings } from "@/types/user.types";
+import { sanitizeText, sanitizeMultiline } from "@/lib/sanitize";
+import { validateProfileUpdate } from "@/lib/validation";
 
 const USERS_COLLECTION = "users";
 
@@ -80,9 +82,27 @@ export async function updateUserProfile(
   data: Partial<Pick<UserProfile, "displayName" | "bio" | "avatar">>
 ): Promise<void> {
   try {
+    // Validación server-side
+    const validation = validateProfileUpdate(data as Record<string, unknown>);
+    if (!validation.valid) {
+      throw new Error(validation.errors[0]);
+    }
+
+    // Sanitización
+    const sanitizedData: Partial<Pick<UserProfile, "displayName" | "bio" | "avatar">> = {};
+    if (data.displayName !== undefined) {
+      sanitizedData.displayName = sanitizeText(data.displayName).slice(0, 100);
+    }
+    if (data.bio !== undefined) {
+      sanitizedData.bio = sanitizeMultiline(data.bio).slice(0, 500);
+    }
+    if (data.avatar !== undefined) {
+      sanitizedData.avatar = data.avatar; // Avatar es Base64, no necesita sanitización de texto
+    }
+
     const docRef = doc(db, USERS_COLLECTION, userId);
     await updateDoc(docRef, {
-      ...data,
+      ...sanitizedData,
       updatedAt: serverTimestamp(),
     });
 

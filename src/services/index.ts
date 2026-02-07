@@ -6,3 +6,4 @@ export * from "./notification.service";
 export * from "./review.service";
 export * from "./message.service";
 export * from "./report.service";
+export * from "./verification.service";

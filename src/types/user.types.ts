@@ -17,6 +17,29 @@ export interface UserProfile {
   lastLoginAt: Timestamp;
   isVerified: boolean;
   isSeller: boolean;
+  
+  // Verificación de vendedor
+  verificationStatus?: VerificationStatus;
+  verificationRequestedAt?: Timestamp;
+  verificationApprovedAt?: Timestamp;
+}
+
+export type VerificationStatus = "none" | "pending" | "approved" | "rejected";
+
+export interface VerificationRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  reason: string;
+  status: VerificationStatus;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  // Datos que respaldan la solicitud
+  auctionsCreated: number;
+  rating: number;
+  reviewsCount: number;
+  rejectionReason?: string;
 }
 
 export interface UserStats {

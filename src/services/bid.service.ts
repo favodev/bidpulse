@@ -20,6 +20,9 @@ import { db } from "@/lib/firebase";
 import { Bid, CreateBidData, BidResult, BID_ERROR_MESSAGES, AutoBidConfig } from "@/types/bid.types";
 import { Auction } from "@/types/auction.types";
 import { notifyOutbid, notifyNewBid } from "./notification.service";
+import { sanitizeText, sanitizeNumber } from "@/lib/sanitize";
+import { validateBidData } from "@/lib/validation";
+import { checkBidRateLimit } from "@/lib/rateLimit";
 
 const BIDS_COLLECTION = "bids";
 const AUCTIONS_COLLECTION = "auctions";
@@ -359,7 +362,49 @@ async function placeBidInternal(
 }
 
 export async function placeBid(data: CreateBidData): Promise<BidResult> {
-  return placeBidInternal(data, { triggerAutoBids: true, isAutoBid: data.isAutoBid });
+  // 1. Rate limiting
+  const rateCheck = checkBidRateLimit(data.bidderId, data.auctionId);
+  if (!rateCheck.allowed) {
+    return {
+      success: false,
+      error: {
+        code: "unknown",
+        message: rateCheck.message || "Demasiadas pujas. Intenta más tarde.",
+      },
+    };
+  }
+
+  // 2. Validación server-side
+  const validation = validateBidData(data as unknown as Record<string, unknown>);
+  if (!validation.valid) {
+    return {
+      success: false,
+      error: {
+        code: "unknown",
+        message: validation.errors[0] || "Datos de puja inválidos",
+      },
+    };
+  }
+
+  // 3. Sanitización
+  const sanitizedData: CreateBidData = {
+    ...data,
+    bidderName: sanitizeText(data.bidderName).slice(0, 100),
+    amount: sanitizeNumber(data.amount),
+    maxAutoBid: data.maxAutoBid ? sanitizeNumber(data.maxAutoBid) : undefined,
+  };
+
+  if (isNaN(sanitizedData.amount) || sanitizedData.amount <= 0) {
+    return {
+      success: false,
+      error: {
+        code: "bid-too-low",
+        message: "Monto de puja inválido",
+      },
+    };
+  }
+
+  return placeBidInternal(sanitizedData, { triggerAutoBids: true, isAutoBid: data.isAutoBid });
 }
 
 export async function getAuctionBids(

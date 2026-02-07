@@ -10,6 +10,11 @@ import {
   Mail,
   FileText,
   ArrowLeft,
+  ShieldCheck,
+  CheckCircle,
+  Clock,
+  XCircle,
+  AlertCircle,
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/layout";
 import { Button, Alert, ConfirmModal } from "@/components/ui";
@@ -23,7 +28,12 @@ import {
   uploadAvatar,
   deleteUserProfile,
 } from "@/services/user.service";
-import { UserProfile } from "@/types/user.types";
+import {
+  checkVerificationEligibility,
+  requestSellerVerification,
+  getLatestVerificationRequest,
+} from "@/services/verification.service";
+import { UserProfile, VerificationRequest } from "@/types/user.types";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -47,6 +57,17 @@ export default function ProfilePage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [previewAvatar, setPreviewAvatar] = useState<string | null>(null);
   const [pendingAvatarBlob, setPendingAvatarBlob] = useState<Blob | null>(null);
+
+  // Estado para verificación de vendedor
+  const [verificationReason, setVerificationReason] = useState("");
+  const [verificationEligibility, setVerificationEligibility] = useState<{
+    eligible: boolean;
+    reasons: string[];
+    details: { emailVerified: boolean; accountAge: number; auctionsCreated: number; hasNoPendingRequest: boolean; isAlreadyVerified: boolean };
+  } | null>(null);
+  const [verificationRequest, setVerificationRequest] = useState<VerificationRequest | null>(null);
+  const [requestingVerification, setRequestingVerification] = useState(false);
+  const [loadingVerification, setLoadingVerification] = useState(false);
 
   const [formData, setFormData] = useState({
     displayName: "",
@@ -94,6 +115,58 @@ export default function ProfilePage() {
 
     loadProfile();
   }, [user, t]);
+
+  // Cargar estado de verificación
+  useEffect(() => {
+    async function loadVerification() {
+      if (!user) return;
+      setLoadingVerification(true);
+      try {
+        const [eligibility, latestRequest] = await Promise.all([
+          checkVerificationEligibility(user.uid, user.emailVerified),
+          getLatestVerificationRequest(user.uid),
+        ]);
+        setVerificationEligibility(eligibility);
+        setVerificationRequest(latestRequest);
+      } catch (err) {
+        console.error("[Profile] Error loading verification:", err);
+      } finally {
+        setLoadingVerification(false);
+      }
+    }
+
+    loadVerification();
+  }, [user]);
+
+  const handleRequestVerification = async () => {
+    if (!user || !verificationReason.trim()) return;
+    setRequestingVerification(true);
+    setError("");
+
+    const result = await requestSellerVerification(
+      user.uid,
+      user.displayName || "Usuario",
+      user.email || "",
+      verificationReason,
+      user.emailVerified
+    );
+
+    if (result.success) {
+      setSuccess(t.verification?.success || "¡Solicitud enviada!");
+      setVerificationReason("");
+      // Recargar estado
+      const [eligibility, latestRequest] = await Promise.all([
+        checkVerificationEligibility(user.uid, user.emailVerified),
+        getLatestVerificationRequest(user.uid),
+      ]);
+      setVerificationEligibility(eligibility);
+      setVerificationRequest(latestRequest);
+    } else {
+      setError(result.error || "Error al enviar la solicitud");
+    }
+
+    setRequestingVerification(false);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -384,6 +457,132 @@ export default function ProfilePage() {
               </Button>
             )}
           </div>
+        </div>
+
+        {/* Verificación de vendedor */}
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 mb-6">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-500" />
+            {t.verification?.title || "Verificación de vendedor"}
+          </h2>
+          <p className="text-slate-400 text-sm mb-5">
+            {t.verification?.subtitle || "Los vendedores verificados generan más confianza."}
+          </p>
+
+          {loadingVerification ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+            </div>
+          ) : profile?.isVerified || verificationEligibility?.details.isAlreadyVerified ? (
+            /* Ya verificado */
+            <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
+              <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+              <div>
+                <p className="text-emerald-400 font-semibold">
+                  {t.verification?.statusApproved || "¡Verificado!"}
+                </p>
+                <p className="text-emerald-400/70 text-sm">
+                  {t.verification?.alreadyVerified || "Ya eres un vendedor verificado."}
+                </p>
+              </div>
+            </div>
+          ) : verificationRequest?.status === "pending" ? (
+            /* Solicitud pendiente */
+            <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
+              <Clock className="w-6 h-6 text-amber-400 flex-shrink-0" />
+              <div>
+                <p className="text-amber-400 font-semibold">
+                  {t.verification?.statusPending || "Solicitud en revisión"}
+                </p>
+                <p className="text-amber-400/70 text-sm">
+                  {t.verification?.pendingMessage || "Tu solicitud está siendo revisada."}
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* Formulario de solicitud */
+            <div className="space-y-4">
+              {/* Estado anterior rechazado */}
+              {verificationRequest?.status === "rejected" && (
+                <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-2">
+                  <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <div>
+                    <p className="text-red-400 text-sm font-semibold">
+                      {t.verification?.statusRejected || "Solicitud rechazada"}
+                    </p>
+                    {verificationRequest.rejectionReason && (
+                      <p className="text-red-400/70 text-xs mt-1">
+                        {verificationRequest.rejectionReason}
+                      </p>
+                    )}
+                    <p className="text-slate-400 text-xs mt-1">
+                      {t.verification?.rejectedMessage || "Puedes intentar nuevamente."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Requisitos */}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <p className="text-sm font-medium text-slate-300 mb-3">
+                  {t.verification?.eligibility || "Requisitos"}
+                </p>
+                <div className="space-y-2">
+                  {[
+                    { met: verificationEligibility?.details.emailVerified, label: t.verification?.reqEmail || "Email verificado" },
+                    { met: (verificationEligibility?.details.accountAge || 0) >= 7, label: t.verification?.reqAge || "Cuenta con al menos 7 días" },
+                    { met: (verificationEligibility?.details.auctionsCreated || 0) >= 1, label: t.verification?.reqAuctions || "Al menos 1 subasta creada" },
+                    { met: verificationEligibility?.details.hasNoPendingRequest, label: t.verification?.reqNoPending || "Sin solicitudes pendientes" },
+                  ].map((req, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      {req.met ? (
+                        <CheckCircle className="w-4 h-4 text-emerald-400" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-slate-500" />
+                      )}
+                      <span className={req.met ? "text-emerald-400" : "text-slate-500"}>
+                        {req.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Campo de razón */}
+              {verificationEligibility?.eligible && (
+                <>
+                  <div>
+                    <label className="text-sm text-slate-300 mb-2 block">
+                      {t.verification?.reasonLabel || "¿Por qué quieres ser verificado?"}
+                    </label>
+                    <textarea
+                      value={verificationReason}
+                      onChange={(e) => setVerificationReason(e.target.value)}
+                      rows={3}
+                      maxLength={1000}
+                      placeholder={t.verification?.reasonPlaceholder || "Describe tu experiencia..."}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder:text-gray-500 focus:outline-none focus:border-emerald-500 resize-none"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">
+                      {t.verification?.reasonHint || "Mínimo 20 caracteres."} ({verificationReason.length}/1000)
+                    </p>
+                  </div>
+
+                  <Button
+                    onClick={handleRequestVerification}
+                    isLoading={requestingVerification}
+                    disabled={verificationReason.trim().length < 20}
+                    className="w-full"
+                  >
+                    <ShieldCheck className="w-5 h-5 mr-2" />
+                    {requestingVerification
+                      ? (t.verification?.requesting || "Enviando...")
+                      : (t.verification?.requestButton || "Solicitar verificación")}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Formulario */}
