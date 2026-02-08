@@ -9,3 +9,4 @@ export { NotificationCenter } from "./NotificationCenter";
 export { CurrencySelector } from "./CurrencySelector";
 export { StarRating, StarRatingInput, RatingDistribution } from "./StarRating";
 export { ReportUserModal } from "./ReportUserModal";
+export { ReportAuctionModal } from "./ReportAuctionModal";

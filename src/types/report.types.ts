@@ -5,7 +5,12 @@ export type ReportReason =
   | "fraud"
   | "harassment"
   | "fake_listing"
+  | "inappropriate_content"
+  | "counterfeit"
+  | "misleading_description"
   | "other";
+
+export type ReportTargetType = "user" | "auction";
 
 export interface UserReport {
   id: string;
@@ -19,6 +24,18 @@ export interface UserReport {
   createdAt: Timestamp;
 }
 
+export interface AuctionReport {
+  id: string;
+  reporterId: string;
+  auctionId: string;
+  auctionTitle: string;
+  sellerId: string;
+  reason: ReportReason;
+  details?: string;
+  status: "pending" | "reviewing" | "resolved";
+  createdAt: Timestamp;
+}
+
 export interface CreateUserReportData {
   reporterId: string;
   reportedUserId: string;
@@ -26,4 +43,13 @@ export interface CreateUserReportData {
   details?: string;
   auctionId?: string | null;
   conversationId?: string | null;
+}
+
+export interface CreateAuctionReportData {
+  reporterId: string;
+  auctionId: string;
+  auctionTitle: string;
+  sellerId: string;
+  reason: ReportReason;
+  details?: string;
 }

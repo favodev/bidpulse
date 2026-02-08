@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Clock, Users, ArrowLeft, Heart, Share2, Shield, Trophy, Loader2, Star, MessageCircle } from "lucide-react";
+import { Clock, Users, ArrowLeft, Heart, Share2, Shield, Trophy, Loader2, Star, MessageCircle, Flag } from "lucide-react";
 import { Auction } from "@/types/auction.types";
 import { Bid } from "@/types/bid.types";
 import {
@@ -18,10 +18,13 @@ import { subscribeToAuctionBids } from "@/services/bid.service";
 import { isFavorite, toggleFavorite } from "@/services/favorite.service";
 import { hasReviewForAuction, getSellerRatingSummary } from "@/services/review.service";
 import { createOrGetConversation } from "@/services/message.service";
+import { createAuctionReport } from "@/services/report.service";
 import { SellerRatingSummary } from "@/types/review.types";
+import type { ReportReason } from "@/types/report.types";
 import { Navbar, Footer } from "@/components/layout";
 import { ShareModal } from "@/components/ui/ShareModal";
 import { StarRating } from "@/components/ui/StarRating";
+import { ReportAuctionModal } from "@/components/ui/ReportAuctionModal";
 import { Alert, Button, ConfirmModal } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { useMessageCenter } from "@/hooks/useMessageCenter";
@@ -29,6 +32,7 @@ import { useCurrency } from "@/hooks/useCurrency";
 import { useLanguage } from "@/i18n";
 import BidForm from "./components/BidForm";
 import BidHistory from "./components/BidHistory";
+import PriceHistoryChart from "./components/PriceHistoryChart";
 
 export default function AuctionDetailPage() {
   const params = useParams();
@@ -56,6 +60,9 @@ export default function AuctionDetailPage() {
   const [endingAuction, setEndingAuction] = useState(false);
   const [endAuctionError, setEndAuctionError] = useState("");
   const [startingChat, setStartingChat] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
 
   useEffect(() => {
     if (!auctionId) return;
@@ -222,6 +229,28 @@ export default function AuctionDetailPage() {
     }
   };
 
+  const handleReportAuction = async (data: { reason: ReportReason; details: string }) => {
+    if (!user || !auction) return;
+    setReportSubmitting(true);
+    try {
+      await createAuctionReport({
+        reporterId: user.uid,
+        auctionId: auction.id,
+        auctionTitle: auction.title,
+        sellerId: auction.sellerId,
+        reason: data.reason,
+        details: data.details,
+      });
+      setReportSuccess(true);
+      setShowReportModal(false);
+      setTimeout(() => setReportSuccess(false), 5000);
+    } catch (err) {
+      console.error("Error reporting auction:", err);
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
+
   const handleStartChat = async () => {
     if (!user) {
       router.push("/login");
@@ -344,6 +373,15 @@ export default function AuctionDetailPage() {
                   >
                     <Share2 className="w-5 h-5" />
                   </button>
+                  {!isSeller && user && (
+                    <button
+                      onClick={() => setShowReportModal(true)}
+                      className="p-2 rounded-lg bg-slate-900 text-gray-400 hover:text-orange-400 transition-colors"
+                      title={t.reportAuction?.title || "Reportar subasta"}
+                    >
+                      <Flag className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
               </div>
               {/* Seller info with rating */}
@@ -484,9 +522,20 @@ export default function AuctionDetailPage() {
         </div>
 
         {/* Historial de pujas */}
-        <div className="mt-12">
+        <div className="mt-12 space-y-8">
+          {bids.length >= 2 && (
+            <PriceHistoryChart bids={bids} startingPrice={auction.startingPrice} />
+          )}
           <BidHistory bids={bids} currentUserId={user?.uid || ""} />
         </div>
+
+        {reportSuccess && (
+          <div className="fixed bottom-6 right-6 z-50 bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-4 shadow-xl">
+            <p className="text-emerald-300 text-sm">
+              {t.reportAuction?.success || "Reporte enviado exitosamente. Revisaremos tu reporte pronto."}
+            </p>
+          </div>
+        )}
       </main>
 
       <Footer />
@@ -508,6 +557,14 @@ export default function AuctionDetailPage() {
         onConfirm={handleEndAuctionEarly}
         onCancel={() => setShowEndAuctionModal(false)}
         confirmVariant="danger"
+      />
+
+      <ReportAuctionModal
+        isOpen={showReportModal}
+        auctionTitle={auction?.title}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={handleReportAuction}
+        isSubmitting={reportSubmitting}
       />
 
       {/* Banner de ganador */}
