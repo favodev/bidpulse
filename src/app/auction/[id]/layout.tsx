@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { getAuction } from "@/services/auction.service";
 import { truncate } from "@/lib/utils";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 
 interface AuctionLayoutProps {
   children: React.ReactNode;
@@ -11,18 +11,20 @@ export async function generateMetadata(
   { params }: { params: { id: string } }
 ): Promise<Metadata> {
   try {
-    const auction = await getAuction(params.id);
+    const db = getAdminDb();
+    const docSnap = await db.collection("auctions").doc(params.id).get();
 
-    if (!auction) {
+    if (!docSnap.exists) {
       return {
         title: "Subasta no encontrada | BidPulse",
         description: "La subasta solicitada no existe o fue eliminada.",
       };
     }
 
-    const title = `${auction.title} | BidPulse`;
-    const description = truncate(auction.description || "", 160);
-    const image = auction.images?.[0] || "/assets/logo.png";
+    const auction = docSnap.data();
+    const title = `${auction?.title || "Subasta"} | BidPulse`;
+    const description = truncate(auction?.description || "", 160);
+    const image = auction?.images?.[0] || "/assets/logo.png";
 
     return {
       title,
