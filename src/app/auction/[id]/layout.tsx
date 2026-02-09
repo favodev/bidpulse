@@ -4,15 +4,16 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 
 interface AuctionLayoutProps {
   children: React.ReactNode;
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata(
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ): Promise<Metadata> {
   try {
+    const { id } = await params;
     const db = getAdminDb();
-    const docSnap = await db.collection("auctions").doc(params.id).get();
+    const docSnap = await db.collection("auctions").doc(id).get();
 
     if (!docSnap.exists) {
       return {

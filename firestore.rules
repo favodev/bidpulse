@@ -9,18 +9,25 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     match /auctions/{auctionId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.sellerId == request.auth.uid;
       allow update: if isSignedIn()
+        && (resource.data.sellerId == request.auth.uid || isAdmin())
         && request.resource.data.sellerId == resource.data.sellerId;
-      allow delete: if isSignedIn() && resource.data.sellerId == request.auth.uid;
+      allow delete: if isSignedIn() && (resource.data.sellerId == request.auth.uid || isAdmin());
     }
 
     match /bids/{bidId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.bidderId == request.auth.uid;
-      allow update, delete: if false;
+      allow update: if isSignedIn()
+        && (resource.data.bidderId == request.auth.uid || resource.data.auctionId != null);
+      allow delete: if isSignedIn() && resource.data.bidderId == request.auth.uid;
     }
 
     match /autoBids/{autoBidId} {
@@ -44,12 +51,14 @@ service cloud.firestore {
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.reviewerId == request.auth.uid;
-      allow update, delete: if isSignedIn() && resource.data.reviewerId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.reviewerId == request.auth.uid || resource.data.sellerId == request.auth.uid);
+      allow delete: if isSignedIn() && (resource.data.reviewerId == request.auth.uid || isAdmin());
     }
 
     match /users/{userId} {
       allow read: if true;
-      allow create, update, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId);
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     match /conversations/{conversationId} {
@@ -60,7 +69,8 @@ service cloud.firestore {
     }
 
     match /messages/{messageId} {
-      allow read, create: if isSignedIn();
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
       allow update, delete: if false;
     }
 
@@ -71,28 +81,32 @@ service cloud.firestore {
 
     match /contact_messages/{messageId} {
       allow create: if true;
-      allow read, update, delete: if false;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /user_reports/{reportId} {
       allow create: if isSignedIn();
-      allow read, update, delete: if false;
+      allow read, update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /auction_reports/{reportId} {
       allow create: if isSignedIn();
-      allow read, update, delete: if false;
+      allow read, update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /categories/{categoryId} {
       allow read: if true;
-      allow create, update, delete: if isSignedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     match /verification_requests/{requestId} {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow update, delete: if false;
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if false;
     }
   }
 }

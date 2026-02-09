@@ -5,9 +5,10 @@ import { Timestamp } from "firebase-admin/firestore";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const authHeader = request.headers.get("authorization");
     const bearerToken = authHeader?.startsWith("Bearer ")
       ? authHeader.slice(7)
@@ -23,7 +24,7 @@ export async function POST(
     const db = getAdminDb();
     const decoded = await auth.verifyIdToken(token);
 
-    const docRef = db.collection("auctions").doc(params.id);
+    const docRef = db.collection("auctions").doc(id);
     const docSnap = await docRef.get();
 
     if (!docSnap.exists) {

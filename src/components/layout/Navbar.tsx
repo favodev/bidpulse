@@ -3,14 +3,14 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { User, Menu, X, LogOut, Settings, UserPlus, Heart, Star, BarChart3 } from "lucide-react";
+import { User, Menu, X, LogOut, Settings, Heart, BarChart3, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuctionAutoFinalize } from "@/hooks/useAuctionAutoFinalize";
 import { Button, LanguageToggle, NotificationCenter, CurrencySelector } from "@/components/ui";
 import { useLanguage } from "@/i18n";
 
 export function Navbar() {
-  const { user, userAvatar, logout, loading } = useAuth();
+  const { user, userAvatar, isAdmin, logout, loading } = useAuth();
   const { t } = useLanguage();
   useAuctionAutoFinalize(); 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -155,6 +155,21 @@ export function Navbar() {
                       <BarChart3 className="w-4 h-4" />
                       {t.analytics?.title || "Dashboard"}
                     </Link>
+
+                    {/* Admin link */}
+                    {isAdmin && (
+                      <>
+                        <div className="my-1 border-t border-slate-700" />
+                        <Link
+                          href="/admin"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2 text-amber-300 hover:bg-slate-800 hover:text-amber-200 transition-colors cursor-pointer"
+                        >
+                          <Shield className="w-4 h-4" />
+                          Admin Panel
+                        </Link>
+                      </>
+                    )}
 
                     {/* Separador visual */}
                     <div className="my-1 border-t border-slate-700" />

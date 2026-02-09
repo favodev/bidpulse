@@ -11,6 +11,7 @@ import { db, auth } from "@/lib/firebase";
 import { UserProfile, UserSettings } from "@/types/user.types";
 import { sanitizeText, sanitizeMultiline } from "@/lib/sanitize";
 import { validateProfileUpdate } from "@/lib/validation";
+import { uploadAvatarImage } from "./storage.service";
 
 const USERS_COLLECTION = "users";
 
@@ -48,6 +49,7 @@ export async function createUserProfile(
       avatar: "",
       isVerified: false,
       isSeller: false,
+      isAdmin: false,
       stats: {
         auctionsCreated: 0,
         auctionsWon: 0,
@@ -173,24 +175,21 @@ async function compressImage(file: File, maxWidth: number = 300): Promise<string
 
 export async function uploadAvatar(userId: string, file: File): Promise<string> {
   try {
-    // Comprimir imagen a 300px de ancho y convertir a Base64
+    // Compress image to 300px width and convert to Base64
     const base64Image = await compressImage(file, 300);
     
-    // Verificar que no sea muy grande (Firestore límite ~1MB)
-    if (base64Image.length > 900000) {
-      throw new Error("La imagen es demasiado grande. Por favor usa una imagen más pequeña.");
-    }
+    // Upload to Firebase Storage instead of storing Base64 in Firestore
+    const downloadURL = await uploadAvatarImage(userId, base64Image);
 
-    // Guardar directamente en Firestore
-    await updateUserProfile(userId, { avatar: base64Image });
+    // Save the URL in Firestore profile
+    await updateUserProfile(userId, { avatar: downloadURL });
 
-    // Actualizar en Firebase Auth
+    // Update Firebase Auth photoURL
     if (auth.currentUser) {
-      // Auth no soporta Base64 muy largo, usamos un placeholder o lo dejamos vacío
-      await updateProfile(auth.currentUser, { photoURL: "" });
+      await updateProfile(auth.currentUser, { photoURL: downloadURL });
     }
 
-    return base64Image;
+    return downloadURL;
   } catch (error) {
     console.error("[UserService] Error uploading avatar:", error);
     throw error;
@@ -210,6 +209,26 @@ export async function updateUserSettings(
   } catch (error) {
     console.error("[UserService] Error updating settings:", error);
     throw error;
+  }
+}
+
+/**
+ * Increments a specific user stat field atomically.
+ */
+export async function incrementUserStat(
+  userId: string,
+  stat: keyof import("@/types/user.types").UserStats,
+  amount: number
+): Promise<void> {
+  try {
+    const { increment } = await import("firebase/firestore");
+    const docRef = doc(db, USERS_COLLECTION, userId);
+    await updateDoc(docRef, {
+      [`stats.${stat}`]: increment(amount),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error(`[UserService] Error incrementing stat ${stat}:`, error);
   }
 }
 

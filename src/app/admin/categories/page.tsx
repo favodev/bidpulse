@@ -66,7 +66,7 @@ const emptyForm: CategoryFormData = {
 
 export default function AdminCategoriesPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const { t } = useLanguage();
 
   const [categories, setCategories] = useState<DynamicCategory[]>([]);
@@ -83,10 +83,10 @@ export default function AdminCategoriesPage() {
   const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && (!user || !isAdmin)) {
       router.push("/login");
     }
-  }, [user, authLoading, router]);
+  }, [user, isAdmin, authLoading, router]);
 
   useEffect(() => {
     loadCategories();

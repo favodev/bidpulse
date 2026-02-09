@@ -330,3 +330,33 @@ function daysSince(timestamp: Timestamp): number {
   const created = timestamp.toMillis();
   return Math.floor((now - created) / (1000 * 60 * 60 * 24));
 }
+
+/**
+ * Obtiene todas las solicitudes de verificación (admin)
+ */
+export async function getAllVerificationRequests(
+  statusFilter?: VerificationStatus
+): Promise<VerificationRequest[]> {
+  try {
+    const verificationRef = collection(db, VERIFICATION_COLLECTION);
+    let q;
+
+    if (statusFilter) {
+      q = query(verificationRef, where("status", "==", statusFilter));
+    } else {
+      q = query(verificationRef);
+    }
+
+    const snapshot = await getDocs(q);
+    return snapshot.docs
+      .map((d) => ({ id: d.id, ...d.data() } as VerificationRequest))
+      .sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
+  } catch (error) {
+    console.error("[VerificationService] Error getting all requests:", error);
+    return [];
+  }
+}

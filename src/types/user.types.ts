@@ -17,6 +17,7 @@ export interface UserProfile {
   lastLoginAt: Timestamp;
   isVerified: boolean;
   isSeller: boolean;
+  isAdmin: boolean;
   
   // Verificación de vendedor
   verificationStatus?: VerificationStatus;

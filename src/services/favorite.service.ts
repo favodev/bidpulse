@@ -9,15 +9,18 @@ import {
   where,
   onSnapshot,
   serverTimestamp,
+  updateDoc,
+  increment,
   Unsubscribe,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 const FAVORITES_COLLECTION = "favorites";
+const AUCTIONS_COLLECTION = "auctions";
 
 export interface Favorite {
   id: string;
-  oderId: string;
+  userId: string;
   auctionId: string;
   createdAt: Date;
 }
@@ -32,6 +35,12 @@ export async function addToFavorites(userId: string, auctionId: string): Promise
       auctionId,
       createdAt: serverTimestamp(),
     });
+
+    // Increment watchersCount on the auction
+    const auctionRef = doc(db, AUCTIONS_COLLECTION, auctionId);
+    await updateDoc(auctionRef, {
+      watchersCount: increment(1),
+    }).catch(() => {});
   } catch (error) {
     console.error("[FavoriteService] Error adding to favorites:", error);
     throw error;
@@ -43,6 +52,12 @@ export async function removeFromFavorites(userId: string, auctionId: string): Pr
     const favoriteId = `${userId}_${auctionId}`;
     const docRef = doc(db, FAVORITES_COLLECTION, favoriteId);
     await deleteDoc(docRef);
+
+    // Decrement watchersCount on the auction
+    const auctionRef = doc(db, AUCTIONS_COLLECTION, auctionId);
+    await updateDoc(auctionRef, {
+      watchersCount: increment(-1),
+    }).catch(() => {});
   } catch (error) {
     console.error("[FavoriteService] Error removing from favorites:", error);
     throw error;

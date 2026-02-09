@@ -22,7 +22,6 @@ import {
 } from "@/types/auth.types";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-const SESSION_COOKIE_NAME = "bp_session";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -31,25 +30,20 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
 
-  const setSessionCookie = useCallback((token?: string) => {
-    if (typeof document === "undefined") return;
-    const maxAge = token ? 60 * 60 : 0;
-    const secure = window.location.protocol === "https:" ? "; Secure" : "";
-    const value = token ? encodeURIComponent(token) : "";
-    document.cookie = `${SESSION_COOKIE_NAME}=${value}; Path=/; Max-Age=${maxAge}; SameSite=Lax${secure}`;
-  }, []);
-
-  // Cargar avatar del usuario desde Firestore
-  const loadUserAvatar = useCallback(async (userId: string) => {
+  // Cargar datos del usuario desde Firestore (avatar + admin)
+  const loadUserProfile = useCallback(async (userId: string) => {
     try {
       const profile = await getUserProfile(userId);
       setUserAvatar(profile?.avatar || null);
+      setIsAdmin(profile?.isAdmin === true);
     } catch (err) {
-      console.error("Error loading user avatar:", err);
+      console.error("Error loading user profile:", err);
       setUserAvatar(null);
+      setIsAdmin(false);
     }
   }, []);
 
@@ -57,20 +51,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        loadUserAvatar(firebaseUser.uid);
+        loadUserProfile(firebaseUser.uid);
+        // Set session via API for HttpOnly cookie
         firebaseUser
           .getIdToken()
-          .then((token) => setSessionCookie(token))
-          .catch(() => setSessionCookie());
+          .then((token) => {
+            fetch("/api/auth/session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ token }),
+            }).catch(() => {});
+          })
+          .catch(() => {});
       } else {
         setUserAvatar(null);
-        setSessionCookie();
+        setIsAdmin(false);
+        fetch("/api/auth/session", { method: "DELETE" }).catch(() => {});
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [loadUserAvatar, setSessionCookie]);
+  }, [loadUserProfile]);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -199,15 +201,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (auth.currentUser) {
       auth.currentUser.reload().then(() => {
         setUser({ ...auth.currentUser } as User);
-        loadUserAvatar(auth.currentUser!.uid);
+        loadUserProfile(auth.currentUser!.uid);
       });
     }
-  }, [loadUserAvatar]);
+  }, [loadUserProfile]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       userAvatar,
+      isAdmin,
       loading,
       error,
       login,
@@ -221,7 +224,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       clearError,
       refreshUser,
     }),
-    [user, userAvatar, loading, error, login, signup, loginWithGoogle, logout, resetPassword, changePassword, sendEmailVerification, deleteAccount, clearError, refreshUser]
+    [user, userAvatar, isAdmin, loading, error, login, signup, loginWithGoogle, logout, resetPassword, changePassword, sendEmailVerification, deleteAccount, clearError, refreshUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

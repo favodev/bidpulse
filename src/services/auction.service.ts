@@ -25,6 +25,8 @@ import {
 import { notifyAuctionWon, notifyAuctionEnded } from "./notification.service";
 import { sanitizeText, sanitizeMultiline, sanitizeNumber } from "@/lib/sanitize";
 import { validateCreateAuction } from "@/lib/validation";
+import { incrementUserStat } from "./user.service";
+import { uploadAuctionImages } from "./storage.service";
 
 const AUCTIONS_COLLECTION = "auctions";
 const auctionsRef = collection(db, AUCTIONS_COLLECTION);
@@ -179,7 +181,7 @@ export async function createAuction(
       title: sanitizedTitle,
       description: sanitizedDescription,
       category: data.category,
-      images: data.images,
+      images: [], // Will be updated after upload to Storage
       startingPrice: sanitizedStartingPrice,
       bidIncrement: sanitizedBidIncrement,
       sellerId,
@@ -204,6 +206,22 @@ export async function createAuction(
     }
 
     const docRef = await addDoc(auctionsRef, auctionData);
+
+    // Upload images to Firebase Storage and update the doc with URLs
+    if (data.images && data.images.length > 0) {
+      try {
+        const imageUrls = await uploadAuctionImages(docRef.id, data.images);
+        await updateDoc(doc(db, AUCTIONS_COLLECTION, docRef.id), { images: imageUrls });
+      } catch (imgErr) {
+        console.error("[AuctionService] Error uploading images:", imgErr);
+      }
+    }
+
+    // Increment seller's auctionsCreated stat
+    incrementUserStat(sellerId, "auctionsCreated", 1).catch((err) =>
+      console.error("[AuctionService] Error incrementing auctionsCreated:", err)
+    );
+
     return docRef.id;
   } catch (error) {
     console.error("[AuctionService] Error creating auction:", error);
@@ -505,51 +523,22 @@ export async function endAuctionEarly(
 ): Promise<boolean> {
   try {
     const token = await auth.currentUser?.getIdToken();
-    if (token) {
-      const response = await fetch(`/api/auction/${auctionId}/end`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        return true;
-      }
-
-      const errorPayload = await response.json().catch(() => null);
-      console.warn("[AuctionService] Server end-auction failed, falling back:", errorPayload);
+    if (!token) {
+      throw new Error("No authenticated user");
     }
 
-    const auction = await getAuction(auctionId);
-    if (!auction) return false;
-
-    if (auction.sellerId !== sellerId || auction.status !== "active") return false;
-
-    await updateAuction(auctionId, {
-      status: "ended" as AuctionStatus,
-      endTime: Timestamp.now(),
-      winnerId: auction.highestBidderId,
-      winnerName: auction.highestBidderName,
-      finalPrice: auction.currentBid,
+    const response = await fetch(`/api/auction/${auctionId}/end`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
-    if (auction.highestBidderId) {
-      notifyAuctionWon(
-        auction.highestBidderId,
-        auctionId,
-        auction.title,
-        auction.currentBid
-      ).catch((err) => console.error("[AuctionService] Error notifying winner:", err));
+    if (!response.ok) {
+      const errorPayload = await response.json().catch(() => null);
+      console.error("[AuctionService] Server end-auction failed:", errorPayload);
+      return false;
     }
-
-    notifyAuctionEnded(
-      auction.sellerId,
-      auctionId,
-      auction.title,
-      auction.currentBid,
-      auction.highestBidderName
-    ).catch((err) => console.error("[AuctionService] Error notifying seller:", err));
 
     return true;
   } catch (error) {

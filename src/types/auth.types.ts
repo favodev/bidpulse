@@ -47,6 +47,7 @@ export interface AuthResult<T = User> {
 export interface AuthContextValue {
   user: User | null;
   userAvatar: string | null;
+  isAdmin: boolean;
   loading: boolean;
   error: AuthError | null;
   login: (credentials: LoginCredentials) => Promise<AuthResult>;

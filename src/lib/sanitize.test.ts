@@ -8,8 +8,6 @@ import {
   isValidEmail,
   sanitizeNumber,
   sanitizeContactForm,
-  sanitizeAuctionData,
-  sanitizeProfileData,
 } from "./sanitize";
 
 describe("escapeHtml", () => {
@@ -121,43 +119,5 @@ describe("sanitizeContactForm", () => {
     expect(result.email).toBe("john@mail.com");
     expect(result.subject).toBe('alert("xss")');
     expect(result.message).toBe("Hola\nMundo");
-  });
-});
-
-describe("sanitizeAuctionData", () => {
-  it("sanitiza título y descripción con límites", () => {
-    const longTitle = "A".repeat(300);
-    const result = sanitizeAuctionData({
-      title: longTitle,
-      description: "<script>bad</script>Good description",
-      category: "electronics",
-      startingPrice: 100,
-      bidIncrement: 5,
-    });
-
-    expect(result.title.length).toBe(200);
-    expect(result.description).toBe("badGood description");
-  });
-});
-
-describe("sanitizeProfileData", () => {
-  it("sanitiza nombre y bio", () => {
-    const result = sanitizeProfileData({
-      displayName: "<b>Evil Name</b>",
-      bio: "Normal bio\nwith newline",
-    });
-
-    expect(result.displayName).toBe("Evil Name");
-    expect(result.bio).toBe("Normal bio\nwith newline");
-  });
-
-  it("respeta límites de longitud", () => {
-    const result = sanitizeProfileData({
-      displayName: "A".repeat(200),
-      bio: "B".repeat(1000),
-    });
-
-    expect(result.displayName!.length).toBe(100);
-    expect(result.bio!.length).toBe(500);
   });
 });

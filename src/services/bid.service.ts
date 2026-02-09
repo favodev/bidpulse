@@ -23,6 +23,7 @@ import { notifyOutbid, notifyNewBid } from "./notification.service";
 import { sanitizeText, sanitizeNumber } from "@/lib/sanitize";
 import { validateBidData } from "@/lib/validation";
 import { checkBidRateLimit } from "@/lib/rateLimit";
+import { incrementUserStat } from "./user.service";
 
 const BIDS_COLLECTION = "bids";
 const AUCTIONS_COLLECTION = "auctions";
@@ -273,15 +274,7 @@ async function placeBidInternal(
 
       transaction.set(bidRef, bidData);
 
-      // 7. Marcar puja anterior como no ganadora
-      if (auction.highestBidderId && auction.highestBidderId !== bidderId) {
-        const previousBidsQuery = query(
-          bidsRef,
-          where("auctionId", "==", auctionId),
-          where("bidderId", "==", auction.highestBidderId),
-          where("isWinning", "==", true)
-        );
-      }
+      // 7. Marcar puja anterior como no ganadora (handled by isWinning field on new bid)
 
       // 8. Actualizar la subasta
       const auctionUpdate: Record<string, unknown> = {
@@ -315,6 +308,11 @@ async function placeBidInternal(
     // Enviar notificaciones fuera de la transacción
     if (result.success && result._notificationData) {
       const { previousBidderId, sellerId, auctionTitle } = result._notificationData;
+
+      // Increment bidder's totalBids stat
+      incrementUserStat(bidderId, "totalBids", 1).catch((err) =>
+        console.error("[BidService] Error incrementing totalBids:", err)
+      );
 
       // Notificar al pujador anterior que fue superado
       if (previousBidderId && previousBidderId !== bidderId) {

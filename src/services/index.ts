@@ -8,3 +8,5 @@ export * from "./message.service";
 export * from "./report.service";
 export * from "./verification.service";
 export * from "./category.service";
+export * from "./storage.service";
+export * from "./favorite.service";
