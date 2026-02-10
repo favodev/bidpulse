@@ -23,12 +23,16 @@ export const metadata: Metadata = {
   description: "Subastas en tiempo real de alto rendimiento con BidPulse. Puja, compite y gana.",
   keywords: ["subastas", "tiempo real", "pujas", "subastas online"],
   manifest: "/manifest.json",
-  themeColor: "#0f172a",
   icons: {
     icon: "/assets/logo.png",
     shortcut: "/assets/logo.png",
     apple: "/assets/logo.png",
   },
+};
+
+export const viewport = {
+  // place themeColor here per Next.js guidance
+  themeColor: "#0f172a",
 };
 
 export default function RootLayout({

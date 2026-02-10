@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Heart, Loader2, ArrowRight } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { toggleFavorite, isFavorite } from "@/services/favorite.service";
+import { useRouter } from "next/navigation";
 import { getPopularAuctions } from "@/services/auction.service";
 import { Auction } from "@/types/auction.types";
 import { Timestamp } from "firebase/firestore";
@@ -26,13 +29,45 @@ function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
 }
 
 function PopularAuctionCard({ auction, t, formatPrice }: { auction: Auction; t: ReturnType<typeof useLanguage>['t']; formatPrice: (amount: number) => string }) {
-  const [isLiked, setIsLiked] = useState(false);
+  const { user } = useAuth();
+  const router = useRouter();
+  const [localLiked, setLocalLiked] = useState<boolean | null>(null);
   const timeLeft = formatTimeRemaining(auction.endTime, t.auction.ended);
 
+  // compute liked state (local optimistic override) — outer scope will supply subscribed favorites
+  const isLiked = localLiked ?? false;
+
+  useEffect(() => {
+    let mounted = true;
+    async function init() {
+      if (!user) {
+        if (mounted) setLocalLiked(false);
+        return;
+      }
+
+      try {
+        const fav = await isFavorite(user.uid, auction.id);
+        if (mounted) setLocalLiked(fav);
+      } catch (err) {
+        if (mounted) setLocalLiked(false);
+      }
+    }
+
+    init();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, auction.id]);
+
+  const handleCardClick = () => {
+    router.push(`/auction/${auction.id}`);
+  };
+
   return (
-    <Link
-      href={`/auction/${auction.id}`}
-      className="group bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden hover:border-emerald-500/50 transition-all hover:scale-[1.02]"
+    <div
+      onClick={handleCardClick}
+      className="group bg-slate-900/50 border border-slate-800 rounded-xl overflow-hidden hover:border-emerald-500/50 transition-all hover:scale-[1.02] cursor-pointer"
     >
       {/* Imagen */}
       <div className="relative aspect-square bg-slate-800">
@@ -55,13 +90,26 @@ function PopularAuctionCard({ auction, t, formatPrice }: { auction: Auction; t: 
 
         {/* Botón favorito */}
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            setIsLiked(!isLiked);
+          onClick={async (e) => {
+            e.stopPropagation();
+            if (!user) {
+              router.push("/login");
+              return;
+            }
+
+            const prev = isLiked;
+            setLocalLiked(!prev);
+            try {
+              const result = await toggleFavorite(user.uid, auction.id);
+              setLocalLiked(result);
+            } catch (err) {
+              console.error("Failed to toggle favorite:", err);
+              setLocalLiked(prev);
+            }
           }}
-          className="absolute top-3 right-3 p-2 rounded-full bg-slate-900/80 text-slate-400 hover:text-red-400 transition-colors"
+          className={`absolute top-3 right-3 p-2 rounded-full bg-slate-900/80 transition-colors ${isLiked ? "text-red-400" : "text-slate-400 hover:text-red-400"}`}
         >
-          <Heart className={`w-4 h-4 ${isLiked ? "fill-red-400 text-red-400" : ""}`} />
+          <Heart className="w-4 h-4" fill={isLiked ? "currentColor" : "none"} />
         </button>
       </div>
 
@@ -83,7 +131,7 @@ function PopularAuctionCard({ auction, t, formatPrice }: { auction: Auction; t: 
           </div>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 

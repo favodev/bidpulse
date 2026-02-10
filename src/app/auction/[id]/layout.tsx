@@ -23,9 +23,15 @@ export async function generateMetadata(
     }
 
     const auction = docSnap.data();
-    const title = `${auction?.title || "Subasta"} | BidPulse`;
-    const description = truncate(auction?.description || "", 160);
-    const image = auction?.images?.[0] || "/assets/logo.png";
+    if (!auction) {
+      return {
+        title: "Subasta no encontrada | BidPulse",
+        description: "La subasta solicitada no existe o fue eliminada.",
+      };
+    }
+    const title = `${auction.title || "Subasta"} | BidPulse`;
+    const description = truncate(auction.description, 160);
+    const image = auction.images?.[0] || "/assets/logo.png";
 
     return {
       title,
