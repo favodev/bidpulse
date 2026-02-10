@@ -163,7 +163,7 @@ export default function ContactPage() {
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
-                  className="w-full h-11 px-3 rounded-md border border-slate-800 bg-slate-950 text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent cursor-pointer"
+                  className="w-full h-11 px-3 rounded-md border border-slate-800 bg-slate-950 text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent cursor-pointer"
                   required
                 >
                   <option value="">{t.contact.selectSubject}</option>
@@ -186,7 +186,7 @@ export default function ContactPage() {
                   onChange={handleChange}
                   required
                   rows={5}
-                  className="w-full px-3 py-2 rounded-md border border-slate-800 bg-slate-950 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
+                  className="w-full px-3 py-2 rounded-md border border-slate-800 bg-slate-950 text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-transparent resize-none"
                   placeholder={t.contact.messagePlaceholder}
                 />
               </div>

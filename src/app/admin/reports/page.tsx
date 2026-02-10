@@ -23,17 +23,6 @@ import {
 } from "@/services/report.service";
 import type { UserReport, AuctionReport, ReportReason } from "@/types/report.types";
 
-const REASON_LABELS: Record<ReportReason, string> = {
-  spam: "Spam",
-  fraud: "Fraude",
-  harassment: "Acoso",
-  fake_listing: "Publicación falsa",
-  inappropriate_content: "Contenido inapropiado",
-  counterfeit: "Producto falsificado",
-  misleading_description: "Descripción engañosa",
-  other: "Otro",
-};
-
 type ReportTab = "users" | "auctions";
 type StatusFilter = "all" | "pending" | "reviewing" | "resolved";
 
@@ -41,6 +30,18 @@ export default function AdminReportsPage() {
   const router = useRouter();
   const { user, isAdmin, loading: authLoading } = useAuth();
   const { t } = useLanguage();
+  const r = t.admin?.reports;
+
+  const REASON_LABELS: Record<ReportReason, string> = {
+    spam: r?.reasons?.spam || "Spam",
+    fraud: r?.reasons?.fraud || "Fraud",
+    harassment: r?.reasons?.harassment || "Harassment",
+    fake_listing: r?.reasons?.fake_listing || "Fake listing",
+    inappropriate_content: r?.reasons?.inappropriate || "Inappropriate content",
+    counterfeit: r?.reasons?.counterfeit || "Counterfeit",
+    misleading_description: r?.reasons?.misleading || "Misleading description",
+    other: r?.reasons?.other || "Other",
+  };
 
   const [tab, setTab] = useState<ReportTab>("users");
   const [filter, setFilter] = useState<StatusFilter>("pending");
@@ -74,7 +75,7 @@ export default function AdminReportsPage() {
       }
     } catch (err) {
       console.error("Error loading reports:", err);
-      setError("Error al cargar reportes");
+      setError(r?.loadError || "Error loading reports");
     } finally {
       setLoading(false);
     }
@@ -87,11 +88,14 @@ export default function AdminReportsPage() {
   ) {
     setProcessing(reportId);
     try {
+      const statusLabel = newStatus === "reviewing"
+        ? (r?.statusReviewing || "Reviewing")
+        : (r?.statusResolved || "Resolved");
       await updateReportStatus(reportId, type, newStatus);
-      setSuccess(`Reporte marcado como "${newStatus === "reviewing" ? "En revisión" : "Resuelto"}"`);
+      setSuccess(`${r?.updateSuccess || "Report marked as"} "${statusLabel}"`);
       await loadReports();
     } catch {
-      setError("Error al actualizar el reporte");
+      setError(r?.updateError || "Error updating report");
     } finally {
       setProcessing(null);
     }
@@ -99,9 +103,9 @@ export default function AdminReportsPage() {
 
   function getStatusBadge(status: string) {
     const config: Record<string, { icon: typeof Clock; color: string; label: string }> = {
-      pending: { icon: Clock, color: "text-yellow-400 bg-yellow-400/10", label: "Pendiente" },
-      reviewing: { icon: Eye, color: "text-blue-400 bg-blue-400/10", label: "En revisión" },
-      resolved: { icon: CheckCircle, color: "text-green-400 bg-green-400/10", label: "Resuelto" },
+      pending: { icon: Clock, color: "text-yellow-400 bg-yellow-400/10", label: r?.statusPending || "Pending" },
+      reviewing: { icon: Eye, color: "text-emerald-400 bg-emerald-400/10", label: r?.statusReviewing || "Reviewing" },
+      resolved: { icon: CheckCircle, color: "text-green-400 bg-green-400/10", label: r?.statusResolved || "Resolved" },
     };
     const cfg = config[status] || config.pending;
     const Icon = cfg.icon;
@@ -124,10 +128,17 @@ export default function AdminReportsPage() {
     });
   }
 
+  const filterLabels: Record<string, string> = {
+    all: r?.filterAll || "All",
+    pending: r?.filterPending || "Pending",
+    reviewing: r?.filterReviewing || "Reviewing",
+    resolved: r?.filterResolved || "Resolved",
+  };
+
   if (authLoading || !user || !isAdmin) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
   }
@@ -144,8 +155,8 @@ export default function AdminReportsPage() {
             <Flag className="w-6 h-6 text-red-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Reportes</h1>
-            <p className="text-slate-400 text-sm">Gestiona los reportes de usuarios y subastas</p>
+            <h1 className="text-2xl font-bold text-white">{r?.title || "Reports"}</h1>
+            <p className="text-slate-400 text-sm">{r?.subtitle || "Manage user and auction reports"}</p>
           </div>
         </div>
 
@@ -158,20 +169,20 @@ export default function AdminReportsPage() {
           <button
             onClick={() => setTab("users")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-              tab === "users" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+              tab === "users" ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
             }`}
           >
             <User className="w-4 h-4" />
-            Reportes de Usuarios
+            {r?.userReports || "User Reports"}
           </button>
           <button
             onClick={() => setTab("auctions")}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-              tab === "auctions" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
+              tab === "auctions" ? "bg-emerald-600 text-white" : "bg-slate-800 text-slate-300 hover:bg-slate-700"
             }`}
           >
             <Package className="w-4 h-4" />
-            Reportes de Subastas
+            {r?.auctionReports || "Auction Reports"}
           </button>
         </div>
 
@@ -185,7 +196,7 @@ export default function AdminReportsPage() {
                 filter === f ? "bg-slate-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"
               }`}
             >
-              {f === "all" ? "Todos" : f === "pending" ? "Pendientes" : f === "reviewing" ? "En revisión" : "Resueltos"}
+              {filterLabels[f]}
             </button>
           ))}
         </div>
@@ -193,12 +204,12 @@ export default function AdminReportsPage() {
         {/* Content */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
           </div>
         ) : reports.length === 0 ? (
           <div className="text-center py-12 bg-slate-900/50 rounded-xl border border-slate-800">
             <AlertTriangle className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-400">No hay reportes {filter !== "all" ? `con estado "${filter}"` : ""}</p>
+            <p className="text-slate-400">{r?.noReports || "No reports"}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -218,17 +229,17 @@ export default function AdminReportsPage() {
 
                   <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
                     <div>
-                      <p className="text-slate-400">Reportado por:</p>
+                      <p className="text-slate-400">{r?.reportedBy || "Reported by:"}</p>
                       <p className="text-white font-medium">{report.reporterId}</p>
                     </div>
                     {isUserReport ? (
                       <div>
-                        <p className="text-slate-400">Usuario reportado:</p>
+                        <p className="text-slate-400">{r?.reportedUser || "Reported user:"}</p>
                         <p className="text-white font-medium">{(report as UserReport).reportedUserId}</p>
                       </div>
                     ) : (
                       <div>
-                        <p className="text-slate-400">Subasta:</p>
+                        <p className="text-slate-400">{r?.auction || "Auction:"}</p>
                         <p className="text-white font-medium">{(report as AuctionReport).auctionTitle}</p>
                       </div>
                     )}
@@ -255,7 +266,7 @@ export default function AdminReportsPage() {
                             isLoading={processing === report.id}
                           >
                             <Eye className="w-3.5 h-3.5 mr-1" />
-                            En revisión
+                            {r?.markReviewing || "Mark reviewing"}
                           </Button>
                         )}
                         <Button
@@ -267,7 +278,7 @@ export default function AdminReportsPage() {
                           isLoading={processing === report.id}
                         >
                           <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                          Resolver
+                          {r?.markResolved || "Resolve"}
                         </Button>
                       </div>
                     )}

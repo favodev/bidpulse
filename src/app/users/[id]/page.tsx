@@ -117,7 +117,7 @@ export default function UserProfilePage() {
       <>
         <Navbar />
         <div className="min-h-screen bg-slate-950 pt-24 pb-12 px-4 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
         </div>
         <Footer />
       </>
@@ -270,7 +270,7 @@ export default function UserProfilePage() {
             onClick={() => setActiveTab("listings")}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 cursor-pointer ${
               activeTab === "listings"
-                ? "border-blue-500 text-blue-400"
+                ? "border-emerald-500 text-emerald-400"
                 : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700"
             }`}
           >
@@ -281,7 +281,7 @@ export default function UserProfilePage() {
             onClick={() => setActiveTab("reviews")}
             className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2 cursor-pointer ${
               activeTab === "reviews"
-                ? "border-blue-500 text-blue-400"
+                ? "border-emerald-500 text-emerald-400"
                 : "border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700"
             }`}
           >

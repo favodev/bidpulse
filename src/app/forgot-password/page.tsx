@@ -9,7 +9,7 @@ import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 
 export default function ForgotPasswordPage() {
   const { resetPassword, error, clearError } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
@@ -52,22 +52,20 @@ export default function ForgotPasswordPage() {
           /* Success state */
           <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-2xl p-8 text-center">
             <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-green-400" />
+              <div className="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-emerald-400" />
               </div>
             </div>
             <h2 className="text-xl font-bold text-white mb-2">
-              {language === "es" ? "Correo enviado" : "Email sent"}
+              {t.auth.emailSent}
             </h2>
             <p className="text-slate-400 mb-6">
-              {language === "es"
-                ? `Hemos enviado un enlace de recuperación a ${email}. Revisa tu bandeja de entrada y sigue las instrucciones.`
-                : `We've sent a recovery link to ${email}. Check your inbox and follow the instructions.`}
+              {t.auth.recoveryLinkSent}
             </p>
             <Link href="/login">
               <Button variant="primary" fullWidth>
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                {language === "es" ? "Volver al login" : "Back to login"}
+                {t.auth.backToLogin}
               </Button>
             </Link>
           </div>
@@ -76,12 +74,10 @@ export default function ForgotPasswordPage() {
             {/* Title */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-white mb-2">
-                {t.auth.forgotPassword}
+                {t.auth.forgotPasswordTitle}
               </h1>
               <p className="text-slate-400">
-                {language === "es"
-                  ? "Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña."
-                  : "Enter your email and we'll send you a link to reset your password."}
+                {t.auth.forgotPasswordSubtitle}
               </p>
             </div>
 
@@ -118,7 +114,7 @@ export default function ForgotPasswordPage() {
                   isLoading={isSubmitting}
                 >
                   <Mail className="w-4 h-4 mr-2" />
-                  {language === "es" ? "Enviar enlace de recuperación" : "Send recovery link"}
+                  {t.auth.sendRecoveryLink}
                 </Button>
               </form>
             </div>
@@ -127,10 +123,10 @@ export default function ForgotPasswordPage() {
             <p className="text-center mt-6">
               <Link
                 href="/login"
-                className="text-blue-400 hover:text-blue-300 font-medium transition-colors inline-flex items-center gap-2"
+                className="text-emerald-400 hover:text-emerald-300 font-medium transition-colors inline-flex items-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" />
-                {language === "es" ? "Volver al login" : "Back to login"}
+                {t.auth.backToLogin}
               </Link>
             </p>
           </>

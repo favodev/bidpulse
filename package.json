@@ -3,9 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "infisical run -- next dev",
+    "dev:local": "next dev",
+    "build": "infisical run -- next build",
+    "build:local": "next build",
+    "start": "infisical run -- next start",
+    "start:local": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest"

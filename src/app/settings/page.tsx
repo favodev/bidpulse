@@ -88,7 +88,7 @@ export default function SettingsPage() {
       <>
         <Navbar />
         <div className="min-h-screen bg-slate-950 pt-24 pb-12 px-4 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
         </div>
         <Footer />
       </>
@@ -219,8 +219,8 @@ function ToggleItem({
       <button
         type="button"
         onClick={onChange}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 focus:ring-offset-slate-900 cursor-pointer ${
-          checked ? "bg-blue-600" : "bg-slate-700"
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 focus:ring-offset-slate-900 cursor-pointer ${
+          checked ? "bg-emerald-600" : "bg-slate-700"
         }`}
       >
         <span

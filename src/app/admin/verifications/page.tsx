@@ -29,6 +29,7 @@ export default function AdminVerificationsPage() {
   const router = useRouter();
   const { user, isAdmin, loading: authLoading } = useAuth();
   const { t } = useLanguage();
+  const v = t.admin?.verifications;
 
   const [requests, setRequests] = useState<VerificationRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +59,7 @@ export default function AdminVerificationsPage() {
       setRequests(data);
     } catch (err) {
       console.error("Error loading verification requests:", err);
-      setError("Error al cargar solicitudes");
+      setError(v?.loadError || "Error loading requests");
     } finally {
       setLoading(false);
     }
@@ -69,13 +70,13 @@ export default function AdminVerificationsPage() {
     try {
       const result = await approveVerification(requestId);
       if (result) {
-        setSuccess("Solicitud aprobada correctamente");
+        setSuccess(v?.approveSuccess || "Request approved");
         await loadRequests();
       } else {
-        setError("Error al aprobar la solicitud");
+        setError(v?.approveError || "Error approving request");
       }
     } catch {
-      setError("Error al aprobar la solicitud");
+      setError(v?.approveError || "Error approving request");
     } finally {
       setProcessing(false);
       setActionId(null);
@@ -85,21 +86,21 @@ export default function AdminVerificationsPage() {
 
   async function handleReject(requestId: string) {
     if (!rejectionReason.trim()) {
-      setError("Debes proporcionar una razón de rechazo");
+      setError(v?.rejectionRequired || "You must provide a rejection reason");
       return;
     }
     setProcessing(true);
     try {
       const result = await rejectVerification(requestId, rejectionReason);
       if (result) {
-        setSuccess("Solicitud rechazada");
+        setSuccess(v?.rejectSuccess || "Request rejected");
         setRejectionReason("");
         await loadRequests();
       } else {
-        setError("Error al rechazar la solicitud");
+        setError(v?.rejectError || "Error rejecting request");
       }
     } catch {
-      setError("Error al rechazar la solicitud");
+      setError(v?.rejectError || "Error rejecting request");
     } finally {
       setProcessing(false);
       setActionId(null);
@@ -109,10 +110,10 @@ export default function AdminVerificationsPage() {
 
   function getStatusBadge(status: VerificationStatus) {
     const config = {
-      pending: { icon: Clock, color: "text-yellow-400 bg-yellow-400/10", label: "Pendiente" },
-      approved: { icon: CheckCircle, color: "text-green-400 bg-green-400/10", label: "Aprobada" },
-      rejected: { icon: XCircle, color: "text-red-400 bg-red-400/10", label: "Rechazada" },
-      none: { icon: Clock, color: "text-slate-400 bg-slate-400/10", label: "Sin estado" },
+      pending: { icon: Clock, color: "text-yellow-400 bg-yellow-400/10", label: v?.statusPending || "Pending" },
+      approved: { icon: CheckCircle, color: "text-green-400 bg-green-400/10", label: v?.statusApproved || "Approved" },
+      rejected: { icon: XCircle, color: "text-red-400 bg-red-400/10", label: v?.statusRejected || "Rejected" },
+      none: { icon: Clock, color: "text-slate-400 bg-slate-400/10", label: v?.statusNone || "No status" },
     };
     const { icon: Icon, color, label } = config[status] || config.none;
     return (
@@ -134,10 +135,17 @@ export default function AdminVerificationsPage() {
     });
   }
 
+  const filterLabels: Record<string, string> = {
+    all: v?.filterAll || "All",
+    pending: v?.filterPending || "Pending",
+    approved: v?.filterApproved || "Approved",
+    rejected: v?.filterRejected || "Rejected",
+  };
+
   if (authLoading || !user || !isAdmin) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
   }
@@ -148,12 +156,12 @@ export default function AdminVerificationsPage() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="p-2 bg-blue-500/20 rounded-lg">
-            <Shield className="w-6 h-6 text-blue-400" />
+          <div className="p-2 bg-emerald-500/20 rounded-lg">
+            <Shield className="w-6 h-6 text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Verificaciones de Vendedor</h1>
-            <p className="text-slate-400 text-sm">Gestiona las solicitudes de verificación</p>
+            <h1 className="text-2xl font-bold text-white">{v?.title || "Seller Verifications"}</h1>
+            <p className="text-slate-400 text-sm">{v?.subtitle || "Manage verification requests"}</p>
           </div>
         </div>
 
@@ -161,7 +169,7 @@ export default function AdminVerificationsPage() {
         {error && <Alert variant="error" message={error} onClose={() => setError("")} className="mb-4" />}
         {success && <Alert variant="success" message={success} onClose={() => setSuccess("")} className="mb-4" />}
 
-        {/* Filtros */}
+        {/* Filters */}
         <div className="flex gap-2 mb-6">
           {(["all", "pending", "approved", "rejected"] as const).map((f) => (
             <button
@@ -169,11 +177,11 @@ export default function AdminVerificationsPage() {
               onClick={() => setFilter(f)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
                 filter === f
-                  ? "bg-blue-600 text-white"
+                  ? "bg-emerald-600 text-white"
                   : "bg-slate-800 text-slate-300 hover:bg-slate-700"
               }`}
             >
-              {f === "all" ? "Todas" : f === "pending" ? "Pendientes" : f === "approved" ? "Aprobadas" : "Rechazadas"}
+              {filterLabels[f]}
             </button>
           ))}
         </div>
@@ -181,12 +189,12 @@ export default function AdminVerificationsPage() {
         {/* Content */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
           </div>
         ) : requests.length === 0 ? (
           <div className="text-center py-12 bg-slate-900/50 rounded-xl border border-slate-800">
             <Shield className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-            <p className="text-slate-400">No hay solicitudes {filter !== "all" ? `con estado "${filter}"` : ""}</p>
+            <p className="text-slate-400">{v?.noRequests || "No requests"}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -211,32 +219,32 @@ export default function AdminVerificationsPage() {
                 {/* Stats */}
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div className="bg-slate-800/50 rounded-lg p-3 text-center">
-                    <Package className="w-4 h-4 text-blue-400 mx-auto mb-1" />
+                    <Package className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
                     <p className="text-white font-semibold">{req.auctionsCreated}</p>
-                    <p className="text-slate-400 text-xs">Subastas</p>
+                    <p className="text-slate-400 text-xs">{v?.auctions || "Auctions"}</p>
                   </div>
                   <div className="bg-slate-800/50 rounded-lg p-3 text-center">
                     <Star className="w-4 h-4 text-yellow-400 mx-auto mb-1" />
                     <p className="text-white font-semibold">{req.rating.toFixed(1)}</p>
-                    <p className="text-slate-400 text-xs">Rating ({req.reviewsCount})</p>
+                    <p className="text-slate-400 text-xs">{v?.rating || "Rating"} ({req.reviewsCount})</p>
                   </div>
                   <div className="bg-slate-800/50 rounded-lg p-3 text-center">
                     <Calendar className="w-4 h-4 text-green-400 mx-auto mb-1" />
                     <p className="text-white font-semibold text-sm">{formatDate(req.createdAt)}</p>
-                    <p className="text-slate-400 text-xs">Fecha</p>
+                    <p className="text-slate-400 text-xs">{v?.date || "Date"}</p>
                   </div>
                 </div>
 
                 {/* Reason */}
                 <div className="bg-slate-800/30 rounded-lg p-3 mb-4">
-                  <p className="text-slate-300 text-sm font-medium mb-1">Motivo de solicitud:</p>
+                  <p className="text-slate-300 text-sm font-medium mb-1">{v?.requestReason || "Request reason:"}</p>
                   <p className="text-slate-400 text-sm">{req.reason}</p>
                 </div>
 
                 {/* Rejection reason if rejected */}
                 {req.status === "rejected" && req.rejectionReason && (
                   <div className="bg-red-900/20 rounded-lg p-3 mb-4">
-                    <p className="text-red-300 text-sm font-medium mb-1">Razón de rechazo:</p>
+                    <p className="text-red-300 text-sm font-medium mb-1">{v?.rejectionReason || "Rejection reason:"}</p>
                     <p className="text-red-400 text-sm">{req.rejectionReason}</p>
                   </div>
                 )}
@@ -251,7 +259,7 @@ export default function AdminVerificationsPage() {
                       disabled={processing}
                     >
                       <CheckCircle className="w-4 h-4 mr-1" />
-                      Aprobar
+                      {v?.approve || "Approve"}
                     </Button>
                     <Button
                       size="sm"
@@ -260,7 +268,7 @@ export default function AdminVerificationsPage() {
                       disabled={processing}
                     >
                       <XCircle className="w-4 h-4 mr-1" />
-                      Rechazar
+                      {v?.reject || "Reject"}
                     </Button>
                   </div>
                 )}
@@ -273,9 +281,9 @@ export default function AdminVerificationsPage() {
         {actionType === "approve" && actionId && (
           <ConfirmModal
             isOpen={true}
-            title="Aprobar verificación"
-            message="¿Estás seguro de aprobar esta solicitud de verificación? El usuario obtendrá el badge de vendedor verificado."
-            confirmLabel="Aprobar"
+            title={v?.approveTitle || "Approve verification"}
+            message={v?.approveMessage || "Are you sure you want to approve this verification request?"}
+            confirmLabel={v?.approveConfirm || "Approve"}
             onConfirm={() => handleApprove(actionId)}
             onCancel={() => { setActionId(null); setActionType(null); }}
           />
@@ -285,14 +293,14 @@ export default function AdminVerificationsPage() {
         {actionType === "reject" && actionId && (
           <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
             <div className="bg-slate-900 border border-slate-700 rounded-xl p-6 max-w-md w-full">
-              <h3 className="text-white font-semibold text-lg mb-2">Rechazar verificación</h3>
-              <p className="text-slate-400 text-sm mb-4">Proporciona una razón para el rechazo:</p>
+              <h3 className="text-white font-semibold text-lg mb-2">{v?.rejectTitle || "Reject verification"}</h3>
+              <p className="text-slate-400 text-sm mb-4">{v?.rejectPrompt || "Provide a reason for the rejection:"}</p>
               <textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
                 style={{ minHeight: 100 }}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Razón del rechazo..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder={v?.rejectionPlaceholder || "Rejection reason..."}
               />
               <div className="flex gap-3 justify-end">
                 <Button
@@ -300,7 +308,7 @@ export default function AdminVerificationsPage() {
                   variant="ghost"
                   onClick={() => { setActionId(null); setActionType(null); setRejectionReason(""); }}
                 >
-                  Cancelar
+                  {t.common?.cancel || "Cancel"}
                 </Button>
                 <Button
                   size="sm"
@@ -308,7 +316,7 @@ export default function AdminVerificationsPage() {
                   onClick={() => handleReject(actionId)}
                   isLoading={processing}
                 >
-                  Confirmar rechazo
+                  {v?.confirmReject || "Confirm rejection"}
                 </Button>
               </div>
             </div>
