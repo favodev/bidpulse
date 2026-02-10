@@ -27,10 +27,10 @@ export function escapeHtml(str: string): string {
 export function stripHtml(str: string): string {
   if (typeof str !== "string") return "";
   return str
-    .replace(/<[^>]*>/g, "") // Eliminar tags HTML
-    .replace(/on\w+\s*=\s*["'][^"']*["']/gi, "") // Eliminar event handlers residuales
+    .replace(/<[^>]*>?/g, "") // Eliminar tags HTML (including malformed ones without closing >)
+    .replace(/on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, "") // Eliminar event handlers (quoted and unquoted)
     .replace(/javascript\s*:/gi, "") // Eliminar javascript: URIs
-    .replace(/data\s*:/gi, "") // Eliminar data: URIs
+    .replace(/vbscript\s*:/gi, "") // Eliminar vbscript: URIs
     .trim();
 }
 

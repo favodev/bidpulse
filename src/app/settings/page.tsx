@@ -191,6 +191,7 @@ export default function SettingsPage() {
                 variant="outline"
                 size="sm"
                 className="border-red-700 text-red-500 hover:bg-red-950/30 hover:border-red-500"
+                onClick={() => router.push("/profile")}
               >
                 {t.settings.danger.deleteBtn}
               </Button>

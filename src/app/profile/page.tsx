@@ -26,7 +26,6 @@ import {
   createUserProfile,
   updateUserProfile,
   uploadAvatar,
-  deleteUserProfile,
 } from "@/services/user.service";
 import {
   checkVerificationEligibility,
@@ -114,7 +113,8 @@ export default function ProfilePage() {
     }
 
     loadProfile();
-  }, [user, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Cargar estado de verificación
   useEffect(() => {
@@ -321,11 +321,6 @@ export default function ProfilePage() {
 
     const result = await deleteAccount(deletePassword || undefined);
     if (result.success) {
-      try {
-        await deleteUserProfile(user.uid);
-      } catch (err) {
-        console.error("Error deleting profile document:", err);
-      }
       router.push("/");
     } else {
       setError(result.error?.message || t.common.error);

@@ -227,7 +227,7 @@ export function ReviewCard({
           <textarea
             value={responseText}
             onChange={(e) => setResponseText(e.target.value)}
-            placeholder={t.reviews?.responseplaceholder || "Escribe tu respuesta..."}
+            placeholder={t.reviews?.responsePlaceholder || "Escribe tu respuesta..."}
             className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500 transition-colors resize-none"
             rows={3}
           />

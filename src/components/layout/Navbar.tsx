@@ -12,7 +12,7 @@ import { useLanguage } from "@/i18n";
 export function Navbar() {
   const { user, userAvatar, isAdmin, logout, loading } = useAuth();
   const { t } = useLanguage();
-  useAuctionAutoFinalize(); 
+  useAuctionAutoFinalize(!!user); 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);

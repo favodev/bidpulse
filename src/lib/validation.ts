@@ -3,7 +3,7 @@
  * Funciones de validación reutilizables para API routes y servicios
  */
 
-import { sanitizeText, sanitizeMultiline, sanitizeEmail, sanitizeNumber, isValidEmail } from "./sanitize";
+import { sanitizeNumber, isValidEmail } from "./sanitize";
 
 // ─── Tipos de resultado de validación ───
 
@@ -128,9 +128,18 @@ function validateAuctionImages(images: unknown): ValidationResult {
     if (typeof img !== "string") {
       return fail("Cada imagen debe ser un string válido");
     }
-    // Base64 images can be large; verify they start correctly
+    // Skip already-uploaded URL images
+    if (img.startsWith("http")) continue;
+    // Base64 images: reject SVGs (XSS vector) and verify format
     if (!img.startsWith("data:image/")) {
       return fail("Formato de imagen inválido");
+    }
+    if (img.startsWith("data:image/svg")) {
+      return fail("Formato SVG no permitido por seguridad");
+    }
+    // Check max size (~2MB in base64 = ~2.7M chars)
+    if (img.length > 2_700_000) {
+      return fail("Imagen demasiado grande. Máximo 2MB por imagen");
     }
   }
   return ok();
@@ -192,7 +201,7 @@ export function validateBidData(data: Record<string, unknown>): ValidationResult
  * Valida datos de contacto (server-side)
  */
 export function validateContactForm(data: Record<string, unknown>): ValidationResult {
-  return merge(
+  const results = [
     validateRequired(data.name, "Nombre"),
     validateString(data.name, "Nombre", 2, 100),
     validateRequired(data.email, "Email"),
@@ -201,7 +210,12 @@ export function validateContactForm(data: Record<string, unknown>): ValidationRe
     validateString(data.subject, "Asunto", 2, 200),
     validateRequired(data.message, "Mensaje"),
     validateString(data.message, "Mensaje", 10, 5000),
-  );
+  ];
+  // Validate subject against allowed values
+  if (typeof data.subject === "string" && !VALID_CONTACT_SUBJECTS.includes(data.subject)) {
+    results.push(fail(`Asunto inválido. Debe ser uno de: ${VALID_CONTACT_SUBJECTS.join(", ")}`));
+  }
+  return merge(...results);
 }
 
 /**

@@ -14,6 +14,7 @@ import {
   AuthError as FirebaseAuthError,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { createUserProfile, getUserProfile, deleteUserProfile } from "@/services/user.service";
 import {
   AuthResult,
   AuthError,
@@ -108,6 +109,17 @@ export const AuthService = {
       });
 
       const userCredential = await signInWithPopup(auth, provider);
+
+      // Create Firestore profile if it doesn't exist yet (first Google sign-in)
+      const existingProfile = await getUserProfile(userCredential.user.uid);
+      if (!existingProfile) {
+        await createUserProfile(
+          userCredential.user.uid,
+          userCredential.user.email || "",
+          userCredential.user.displayName || undefined
+        );
+      }
+
       return {
         success: true,
         data: userCredential.user,
@@ -220,6 +232,14 @@ export const AuthService = {
           currentPassword
         );
         await reauthenticateWithCredential(auth.currentUser, credential);
+      }
+
+      // Delete Firestore profile BEFORE deleting auth user (while still authenticated)
+      const userId = auth.currentUser.uid;
+      try {
+        await deleteUserProfile(userId);
+      } catch (profileErr) {
+        console.error("[AuthService] Error deleting user profile:", profileErr);
       }
 
       await deleteUser(auth.currentUser);

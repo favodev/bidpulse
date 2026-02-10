@@ -6,6 +6,8 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
+  useMemo,
   ReactNode,
 } from "react";
 import { useAuth } from "./useAuth";
@@ -57,6 +59,7 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | null>(null);
+  const prevNotificationsCountRef = useRef(0);
 
   // Verificar soporte de push
   const pushSupported = typeof window !== "undefined" && isPushSupported();
@@ -82,8 +85,8 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
     const unsubscribeNotifications = subscribeToNotifications(
       user.uid,
       (newNotifications) => {
-        // Detectar nuevas notificaciones para mostrar push local
-        if (notifications.length > 0 && newNotifications.length > notifications.length) {
+        // Detectar nuevas notificaciones para mostrar push local (use ref to avoid stale closure)
+        if (prevNotificationsCountRef.current > 0 && newNotifications.length > prevNotificationsCountRef.current) {
           const latestNotification = newNotifications[0];
           if (
             latestNotification &&
@@ -96,6 +99,7 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
             });
           }
         }
+        prevNotificationsCountRef.current = newNotifications.length;
         setNotifications(newNotifications);
         setLoading(false);
       }
@@ -145,7 +149,7 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
     return permission;
   }, []);
 
-  const value: NotificationsContextValue = {
+  const value = useMemo<NotificationsContextValue>(() => ({
     notifications,
     unreadCount,
     loading,
@@ -156,7 +160,7 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
     pushSupported,
     pushPermission,
     requestPushPermission: handleRequestPushPermission,
-  };
+  }), [notifications, unreadCount, loading, handleMarkAsRead, handleMarkAllAsRead, handleDeleteNotification, handleClearAll, pushSupported, pushPermission, handleRequestPushPermission]);
 
   return (
     <NotificationsContext.Provider value={value}>

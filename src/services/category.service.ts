@@ -7,6 +7,7 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  where,
   orderBy,
   serverTimestamp,
   Timestamp,
@@ -43,15 +44,14 @@ export interface CreateCategoryData {
 
 export async function getCategories(onlyActive = true): Promise<DynamicCategory[]> {
   try {
-    const q = query(categoriesRef, orderBy("order", "asc"));
+    const q = onlyActive
+      ? query(categoriesRef, where("isActive", "==", true), orderBy("order", "asc"))
+      : query(categoriesRef, orderBy("order", "asc"));
     const querySnapshot = await getDocs(q);
     const categories: DynamicCategory[] = [];
 
     querySnapshot.forEach((doc) => {
-      const cat = { id: doc.id, ...doc.data() } as DynamicCategory;
-      if (!onlyActive || cat.isActive) {
-        categories.push(cat);
-      }
+      categories.push({ id: doc.id, ...doc.data() } as DynamicCategory);
     });
 
     return categories;

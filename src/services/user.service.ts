@@ -5,6 +5,7 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  increment,
 } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 import { db, auth } from "@/lib/firebase";
@@ -134,25 +135,14 @@ export async function updateUserProfile(
 }
 
 /**
- * Convierte un archivo a Base64
- */
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
-}
-
-/**
  * Comprime una imagen para reducir su tamaño
- * Firestore tiene un límite de ~1MB por documento
  */
 async function compressImage(file: File, maxWidth: number = 300): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl); // Prevent memory leak
       const canvas = document.createElement("canvas");
       const ratio = maxWidth / img.width;
       canvas.width = maxWidth;
@@ -165,11 +155,14 @@ async function compressImage(file: File, maxWidth: number = 300): Promise<string
       }
       
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const base64 = canvas.toDataURL("image/jpeg", 0.7); // 70% calidad
+      const base64 = canvas.toDataURL("image/jpeg", 0.7);
       resolve(base64);
     };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
+    img.onerror = (err) => {
+      URL.revokeObjectURL(objectUrl);
+      reject(err);
+    };
+    img.src = objectUrl;
   });
 }
 
@@ -181,13 +174,8 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
     // Upload to Firebase Storage instead of storing Base64 in Firestore
     const downloadURL = await uploadAvatarImage(userId, base64Image);
 
-    // Save the URL in Firestore profile
+    // Save the URL in Firestore profile (this also updates Firebase Auth photoURL)
     await updateUserProfile(userId, { avatar: downloadURL });
-
-    // Update Firebase Auth photoURL
-    if (auth.currentUser) {
-      await updateProfile(auth.currentUser, { photoURL: downloadURL });
-    }
 
     return downloadURL;
   } catch (error) {
@@ -202,10 +190,14 @@ export async function updateUserSettings(
 ): Promise<void> {
   try {
     const docRef = doc(db, USERS_COLLECTION, userId);
-    await updateDoc(docRef, {
-      settings,
+    // Use dot notation to merge individual settings fields instead of overwriting the entire object
+    const updateData: Record<string, unknown> = {
       updatedAt: serverTimestamp(),
-    });
+    };
+    for (const [key, value] of Object.entries(settings)) {
+      updateData[`settings.${key}`] = value;
+    }
+    await updateDoc(docRef, updateData);
   } catch (error) {
     console.error("[UserService] Error updating settings:", error);
     throw error;
@@ -221,7 +213,6 @@ export async function incrementUserStat(
   amount: number
 ): Promise<void> {
   try {
-    const { increment } = await import("firebase/firestore");
     const docRef = doc(db, USERS_COLLECTION, userId);
     await updateDoc(docRef, {
       [`stats.${stat}`]: increment(amount),

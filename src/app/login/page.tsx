@@ -222,15 +222,6 @@ export default function LoginPage() {
           </Link>
         </p>
 
-        {/* Enlaces legales */}
-        <div className="flex justify-center gap-6 mt-6 text-sm text-slate-500">
-          <Link href="/privacy" className="hover:text-slate-400 transition-colors">
-            {t.auth.privacyPolicy}
-          </Link>
-          <Link href="/terms" className="hover:text-slate-400 transition-colors">
-            {t.auth.termsOfService}
-          </Link>
-        </div>
       </div>
     </div>
   );

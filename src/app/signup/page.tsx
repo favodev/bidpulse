@@ -295,23 +295,12 @@ export default function SignupPage() {
               />
               <label htmlFor="terms" className="text-sm text-slate-400">
                 {t.auth.termsAgree}{" "}
-                <Link
-                  href="/terms"
-                  className="text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                  {t.auth.termsOfService}
-                </Link>{" "}
-                {t.auth.and}{" "}
-                <Link
-                  href="/privacy"
-                  className="text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                  {t.auth.privacyPolicy}
-                </Link>
+                  <span className="text-blue-400">{t.auth.termsOfService}</span>
+                  {" "}{t.auth.and}{" "}
+                  <span className="text-blue-400">{t.auth.privacyPolicy}</span>
               </label>
             </div>
 
-            {/* Botón crear cuenta */}
             <Button
               type="submit"
               fullWidth

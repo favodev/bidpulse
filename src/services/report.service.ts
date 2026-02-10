@@ -1,5 +1,6 @@
 import { collection, addDoc, getDocs, updateDoc, doc, query, where, orderBy, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { sanitizeMultiline } from "@/lib/sanitize";
 import type { CreateUserReportData, CreateAuctionReportData, UserReport, AuctionReport } from "@/types/report.types";
 
 const USER_REPORTS_COLLECTION = "user_reports";
@@ -12,7 +13,7 @@ export async function createUserReport(
     const reportsRef = collection(db, USER_REPORTS_COLLECTION);
     const docRef = await addDoc(reportsRef, {
       ...data,
-      details: data.details || "",
+      details: data.details ? sanitizeMultiline(data.details).slice(0, 2000) : "",
       auctionId: data.auctionId || null,
       conversationId: data.conversationId || null,
       status: "pending",
@@ -33,7 +34,7 @@ export async function createAuctionReport(
     const reportsRef = collection(db, AUCTION_REPORTS_COLLECTION);
     const docRef = await addDoc(reportsRef, {
       ...data,
-      details: data.details || "",
+      details: data.details ? sanitizeMultiline(data.details).slice(0, 2000) : "",
       status: "pending",
       createdAt: serverTimestamp(),
     });
@@ -54,8 +55,8 @@ export async function getUserReports(
   try {
     const reportsRef = collection(db, USER_REPORTS_COLLECTION);
     const q = statusFilter
-      ? query(reportsRef, where("status", "==", statusFilter))
-      : query(reportsRef);
+      ? query(reportsRef, where("status", "==", statusFilter), orderBy("createdAt", "desc"))
+      : query(reportsRef, orderBy("createdAt", "desc"));
 
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as UserReport));
@@ -74,8 +75,8 @@ export async function getAuctionReports(
   try {
     const reportsRef = collection(db, AUCTION_REPORTS_COLLECTION);
     const q = statusFilter
-      ? query(reportsRef, where("status", "==", statusFilter))
-      : query(reportsRef);
+      ? query(reportsRef, where("status", "==", statusFilter), orderBy("createdAt", "desc"))
+      : query(reportsRef, orderBy("createdAt", "desc"));
 
     const snapshot = await getDocs(q);
     return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as AuctionReport));
@@ -86,7 +87,7 @@ export async function getAuctionReports(
 }
 
 /**
- * Update report status (admin)
+ * Update report status (admin) with audit trail
  */
 export async function updateReportStatus(
   reportId: string,
@@ -96,7 +97,10 @@ export async function updateReportStatus(
   try {
     const collectionName = type === "user" ? USER_REPORTS_COLLECTION : AUCTION_REPORTS_COLLECTION;
     const reportRef = doc(db, collectionName, reportId);
-    await updateDoc(reportRef, { status });
+    await updateDoc(reportRef, {
+      status,
+      updatedAt: serverTimestamp(),
+    });
   } catch (error) {
     console.error("[ReportService] Error updating report status:", error);
     throw error;

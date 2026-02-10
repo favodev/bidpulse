@@ -6,6 +6,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   ReactNode,
 } from "react";
 import { translations, Language, TranslationKeys } from "./translations";
@@ -50,11 +51,11 @@ export function LanguageProvider({ children }: LanguageProviderProps) {
     }
   }, [language, isHydrated]);
 
-  const value: LanguageContextValue = {
+  const value = useMemo<LanguageContextValue>(() => ({
     language,
     setLanguage,
     t: translations[language],
-  };
+  }), [language, setLanguage]);
 
   return (
     <LanguageContext.Provider value={value}>

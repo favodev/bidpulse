@@ -8,31 +8,15 @@ import { toggleFavorite, isFavorite } from "@/services/favorite.service";
 import { useRouter } from "next/navigation";
 import { getPopularAuctions } from "@/services/auction.service";
 import { Auction } from "@/types/auction.types";
-import { Timestamp } from "firebase/firestore";
 import { useLanguage } from "@/i18n";
 import { useCurrency } from "@/hooks/useCurrency";
-
-function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
-  const now = new Date();
-  const end = endTime.toDate();
-  const diff = end.getTime() - now.getTime();
-
-  if (diff <= 0) return endedText;
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
-}
+import { formatTimeRemaining } from "@/lib/utils";
 
 function PopularAuctionCard({ auction, t, formatPrice }: { auction: Auction; t: ReturnType<typeof useLanguage>['t']; formatPrice: (amount: number) => string }) {
   const { user } = useAuth();
   const router = useRouter();
   const [localLiked, setLocalLiked] = useState<boolean | null>(null);
-  const timeLeft = formatTimeRemaining(auction.endTime, t.auction.ended);
+  const timeLeft = formatTimeRemaining(auction.endTime.toDate(), t.auction.ended);
 
   // compute liked state (local optimistic override) — outer scope will supply subscribed favorites
   const isLiked = localLiked ?? false;

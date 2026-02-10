@@ -3,30 +3,13 @@
 import Link from "next/link";
 import { Clock, Gavel, Tag } from "lucide-react";
 import { Auction } from "@/types/auction.types";
-import { Timestamp } from "firebase/firestore";
 import { useLanguage } from "@/i18n";
 import { useCurrency } from "@/hooks/useCurrency";
+import { formatTimeRemaining } from "@/lib/utils";
 
 interface AuctionCardProps {
   auction: Auction;
   compact?: boolean;
-}
-
-// Función para formatear tiempo restante
-function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
-  const now = new Date();
-  const end = endTime.toDate();
-  const diff = end.getTime() - now.getTime();
-
-  if (diff <= 0) return endedText;
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
 }
 
 export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
@@ -35,8 +18,8 @@ export function AuctionCard({ auction, compact = false }: AuctionCardProps) {
   const isEnded = auction.status === "ended";
   const isScheduled = auction.status === "scheduled";
   const timeRemaining = isScheduled
-    ? formatTimeRemaining(auction.startTime, t.auction.startsIn || "Comienza pronto")
-    : formatTimeRemaining(auction.endTime, t.auction.ended);
+    ? formatTimeRemaining(auction.startTime.toDate(), t.auction.startsIn || "Comienza pronto")
+    : formatTimeRemaining(auction.endTime.toDate(), t.auction.ended);
   const isEndingSoon = !isEnded && !isScheduled && auction.endTime.toDate().getTime() - Date.now() < 3600000;
 
   // Obtener etiqueta de categoría traducida

@@ -10,22 +10,27 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, className = "", rightElement, type, ...props }, ref) => {
+  ({ label, error, className = "", rightElement, type, id: providedId, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const isPassword = type === "password";
     const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+    const autoId = providedId || (label ? `input-${label.toLowerCase().replace(/\s+/g, "-")}` : undefined);
+    const errorId = autoId ? `${autoId}-error` : undefined;
 
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-200 mb-1.5">
+          <label htmlFor={autoId} className="block text-sm font-medium text-gray-200 mb-1.5">
             {label}
           </label>
         )}
         <div className="relative">
           <input
             ref={ref}
+            id={autoId}
             type={inputType}
+            aria-invalid={!!error}
+            aria-describedby={error && errorId ? errorId : undefined}
             className={`
               w-full px-4 py-3 
               bg-slate-800 
@@ -48,6 +53,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
               tabIndex={-1}
+              aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
                 <EyeOff className="w-5 h-5" />
@@ -63,7 +69,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {error && (
-          <p className="mt-1.5 text-sm text-red-400">{error}</p>
+          <p id={errorId} className="mt-1.5 text-sm text-red-400" role="alert">{error}</p>
         )}
       </div>
     );

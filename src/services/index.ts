@@ -10,3 +10,4 @@ export * from "./verification.service";
 export * from "./category.service";
 export * from "./storage.service";
 export * from "./favorite.service";
+export * from "./contact.service";

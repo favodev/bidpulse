@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { X, Link as LinkIcon, Check, MessageCircle } from "lucide-react";
 import { useLanguage } from "@/i18n";
 
@@ -47,6 +47,20 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
   const [copied, setCopied] = useState(false);
   const { t } = useLanguage();
 
+  // Close on Escape key
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    },
+    [onClose]
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, handleKeyDown]);
+
   if (!isOpen) return null;
 
   const handleCopyLink = async () => {
@@ -87,7 +101,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
@@ -98,7 +112,7 @@ export function ShareModal({ isOpen, onClose, title, url }: ShareModalProps) {
       <div className="relative bg-slate-900 rounded-2xl border border-slate-800 w-full max-w-md p-6 shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-white">{t.shareModal.title}</h3>
+          <h3 id="share-modal-title" className="text-xl font-semibold text-white">{t.shareModal.title}</h3>
           <button
             onClick={onClose}
             className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors"

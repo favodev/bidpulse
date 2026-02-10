@@ -46,20 +46,12 @@ export async function uploadAuctionImages(
   auctionId: string,
   base64Images: string[]
 ): Promise<string[]> {
-  const urls: string[] = [];
-
-  for (let i = 0; i < base64Images.length; i++) {
-    const image = base64Images[i];
+  const uploadPromises = base64Images.map(async (image, i) => {
     // If already a URL (not Base64), keep it
-    if (image.startsWith("http")) {
-      urls.push(image);
-      continue;
-    }
-    const url = await uploadImage(`auctions/${auctionId}/${i}`, image);
-    urls.push(url);
-  }
-
-  return urls;
+    if (image.startsWith("http")) return image;
+    return uploadImage(`auctions/${auctionId}/${i}`, image);
+  });
+  return Promise.all(uploadPromises);
 }
 
 /**

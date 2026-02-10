@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Star } from "lucide-react";
 import { Button, Input, Alert } from "@/components/ui";
 import { StarRatingInput } from "@/components/ui/StarRating";
@@ -30,7 +29,6 @@ export function ReviewForm({
   isLoading = false,
 }: ReviewFormProps) {
   const { t } = useLanguage();
-  const router = useRouter();
 
   const [rating, setRating] = useState(0);
   const [title, setTitle] = useState("");

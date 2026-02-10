@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useCallback } from "react";
 import { X, AlertTriangle } from "lucide-react";
 import { useLanguage } from "@/i18n";
 
@@ -26,6 +27,20 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   const { t } = useLanguage();
 
+  // Close on Escape key
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    },
+    [onCancel]
+  );
+
+  useEffect(() => {
+    if (!isOpen) return;
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, handleKeyDown]);
+
   if (!isOpen) return null;
 
   const confirmStyles =
@@ -34,7 +49,7 @@ export function ConfirmModal({
       : "bg-emerald-600 hover:bg-emerald-500";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title">
       <div
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onCancel}
@@ -46,7 +61,7 @@ export function ConfirmModal({
             <div className="w-9 h-9 rounded-full bg-red-500/15 flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-red-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white">
+            <h3 id="confirm-modal-title" className="text-lg font-semibold text-white">
               {title || t.common?.confirm || "Confirmar"}
             </h3>
           </div>

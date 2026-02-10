@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { notifyNewMessage } from "@/services/notification.service";
+import { sanitizeText } from "@/lib/sanitize";
 import type {
   Conversation,
   CreateConversationData,
@@ -173,15 +174,22 @@ export async function sendMessage(
   try {
     const conversation = await getConversation(conversationId);
 
+    // Sanitize and limit message text
+    const sanitizedText = sanitizeText(data.text).slice(0, 5000);
+    if (!sanitizedText.trim()) {
+      throw new Error("El mensaje no puede estar vacío");
+    }
+    const sanitizedData = { ...data, text: sanitizedText };
+
     const docRef = await addDoc(messagesRef, {
       conversationId,
-      ...data,
+      ...sanitizedData,
       createdAt: serverTimestamp(),
     });
 
     const conversationRef = doc(db, CONVERSATIONS_COLLECTION, conversationId);
     await updateDoc(conversationRef, {
-      lastMessage: data.text,
+      lastMessage: sanitizedText.slice(0, 200),
       lastMessageAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -197,9 +205,9 @@ export async function sendMessage(
           conversationId,
           conversation.auctionId,
           conversation.auctionTitle,
-          data.senderId,
-          data.senderName,
-          data.text
+          sanitizedData.senderId,
+          sanitizedData.senderName,
+          sanitizedText
         );
       }
     }

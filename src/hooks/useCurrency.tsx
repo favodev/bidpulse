@@ -6,6 +6,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useMemo,
   ReactNode,
 } from "react";
 
@@ -219,6 +220,7 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
   const convertToCLP = useCallback(
     (amount: number): number => {
       const rate = exchangeRates[currency];
+      if (!rate || rate === 0) return amount; // guard division by zero
       return amount / rate;
     },
     [currency, exchangeRates]
@@ -240,7 +242,7 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
     [currency, convertFromCLP]
   );
 
-  const value: CurrencyContextValue = {
+  const value = useMemo<CurrencyContextValue>(() => ({
     currency,
     currencyInfo: CURRENCIES[currency],
     setCurrency,
@@ -250,7 +252,7 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
     availableCurrencies: Object.values(CURRENCIES),
     isLoadingRates,
     lastUpdated,
-  };
+  }), [currency, setCurrency, formatPrice, convertFromCLP, convertToCLP, isLoadingRates, lastUpdated]);
 
   return (
     <CurrencyContext.Provider value={value}>

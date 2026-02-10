@@ -44,12 +44,12 @@ export function formatCurrency(amount: number, currency = "CLP"): string {
   }).format(amount);
 }
 
-export function formatTimeRemaining(endTime: Date): string {
+export function formatTimeRemaining(endTime: Date, endedText = "Finalizado"): string {
   const now = new Date();
   const diff = endTime.getTime() - now.getTime();
 
   if (diff <= 0) {
-    return "Finalizado";
+    return endedText;
   }
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -76,7 +76,13 @@ export function truncate(text: string | undefined | null, maxLength: number): st
 }
 
 export function generateId(): string {
-  return Math.random().toString(36).substring(2, 15);
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID().replace(/-/g, "").substring(0, 15);
+  }
+  // Fallback for older environments
+  const array = new Uint8Array(10);
+  crypto.getRandomValues(array);
+  return Array.from(array, (b) => b.toString(36)).join("").substring(0, 15);
 }
 
 export function debounce<T extends (...args: unknown[]) => unknown>(

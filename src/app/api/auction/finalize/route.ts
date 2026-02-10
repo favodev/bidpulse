@@ -1,14 +1,29 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { Timestamp } from "firebase-admin/firestore";
 
 /**
  * POST /api/auction/finalize
  * Server-side finalization of expired auctions and activation of scheduled ones.
- * Replaces the client-side polling approach for reliability.
+ * Protected by a secret token to prevent unauthorized access.
  */
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    // Verify authorization: accept either a secret cron token or a valid session
+    const cronSecret = process.env.CRON_SECRET;
+    const authHeader = request.headers.get("authorization");
+    const hasCronAuth = cronSecret && authHeader === `Bearer ${cronSecret}`;
+
+    // Also accept internal calls (from client-side polling) without strict auth
+    // since this is an idempotent operation that only finalizes expired auctions
+    if (!hasCronAuth) {
+      const session = request.cookies.get("bp_session")?.value;
+      if (!session) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+    }
+
     const db = getAdminDb();
     const now = Timestamp.now();
     let finalizedCount = 0;

@@ -21,8 +21,11 @@ import {
   updateDoc,
   query,
   where,
+  orderBy,
+  limit,
   serverTimestamp,
   Timestamp,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { UserProfile, VerificationRequest, VerificationStatus } from "@/types/user.types";
@@ -228,22 +231,15 @@ export async function getLatestVerificationRequest(
   try {
     const q = query(
       collection(db, VERIFICATION_COLLECTION),
-      where("userId", "==", userId)
+      where("userId", "==", userId),
+      orderBy("createdAt", "desc"),
+      limit(1)
     );
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) return null;
 
-    // Ordenar por fecha de creación descendente
-    const requests = snapshot.docs
-      .map((d) => ({ id: d.id, ...d.data() } as VerificationRequest))
-      .sort((a, b) => {
-        const aTime = a.createdAt?.toMillis?.() || 0;
-        const bTime = b.createdAt?.toMillis?.() || 0;
-        return bTime - aTime;
-      });
-
-    return requests[0] || null;
+    return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as VerificationRequest;
   } catch (error) {
     console.error("[VerificationService] Error getting latest request:", error);
     return null;
@@ -255,31 +251,32 @@ export async function getLatestVerificationRequest(
  */
 export async function approveVerification(requestId: string): Promise<boolean> {
   try {
-    const requestRef = doc(db, VERIFICATION_COLLECTION, requestId);
-    const requestSnap = await getDoc(requestRef);
+    return await runTransaction(db, async (transaction) => {
+      const requestRef = doc(db, VERIFICATION_COLLECTION, requestId);
+      const requestSnap = await transaction.get(requestRef);
 
-    if (!requestSnap.exists()) return false;
+      if (!requestSnap.exists()) return false;
 
-    const request = requestSnap.data() as VerificationRequest;
+      const request = requestSnap.data() as VerificationRequest;
+      const userRef = doc(db, USERS_COLLECTION, request.userId);
 
-    // Actualizar solicitud
-    await updateDoc(requestRef, {
-      status: "approved",
-      updatedAt: serverTimestamp(),
+      // Atomically update request + user profile
+      transaction.update(requestRef, {
+        status: "approved",
+        updatedAt: serverTimestamp(),
+      });
+
+      transaction.update(userRef, {
+        isVerified: true,
+        isSeller: true,
+        verificationStatus: "approved",
+        verificationApprovedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      console.log("[VerificationService] Approved verification for user:", request.userId);
+      return true;
     });
-
-    // Actualizar perfil del usuario
-    const userRef = doc(db, USERS_COLLECTION, request.userId);
-    await updateDoc(userRef, {
-      isVerified: true,
-      isSeller: true,
-      verificationStatus: "approved",
-      verificationApprovedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-
-    console.log("[VerificationService] Approved verification for user:", request.userId);
-    return true;
   } catch (error) {
     console.error("[VerificationService] Error approving verification:", error);
     return false;
@@ -294,28 +291,29 @@ export async function rejectVerification(
   rejectionReason: string
 ): Promise<boolean> {
   try {
-    const requestRef = doc(db, VERIFICATION_COLLECTION, requestId);
-    const requestSnap = await getDoc(requestRef);
+    return await runTransaction(db, async (transaction) => {
+      const requestRef = doc(db, VERIFICATION_COLLECTION, requestId);
+      const requestSnap = await transaction.get(requestRef);
 
-    if (!requestSnap.exists()) return false;
+      if (!requestSnap.exists()) return false;
 
-    const request = requestSnap.data() as VerificationRequest;
+      const request = requestSnap.data() as VerificationRequest;
+      const userRef = doc(db, USERS_COLLECTION, request.userId);
 
-    // Actualizar solicitud
-    await updateDoc(requestRef, {
-      status: "rejected",
-      rejectionReason,
-      updatedAt: serverTimestamp(),
+      // Atomically update request + user profile
+      transaction.update(requestRef, {
+        status: "rejected",
+        rejectionReason,
+        updatedAt: serverTimestamp(),
+      });
+
+      transaction.update(userRef, {
+        verificationStatus: "rejected",
+        updatedAt: serverTimestamp(),
+      });
+
+      return true;
     });
-
-    // Actualizar perfil del usuario
-    const userRef = doc(db, USERS_COLLECTION, request.userId);
-    await updateDoc(userRef, {
-      verificationStatus: "rejected",
-      updatedAt: serverTimestamp(),
-    });
-
-    return true;
   } catch (error) {
     console.error("[VerificationService] Error rejecting verification:", error);
     return false;
@@ -342,19 +340,13 @@ export async function getAllVerificationRequests(
     let q;
 
     if (statusFilter) {
-      q = query(verificationRef, where("status", "==", statusFilter));
+      q = query(verificationRef, where("status", "==", statusFilter), orderBy("createdAt", "desc"));
     } else {
-      q = query(verificationRef);
+      q = query(verificationRef, orderBy("createdAt", "desc"));
     }
 
     const snapshot = await getDocs(q);
-    return snapshot.docs
-      .map((d) => ({ id: d.id, ...d.data() } as VerificationRequest))
-      .sort((a, b) => {
-        const aTime = a.createdAt?.toMillis?.() || 0;
-        const bTime = b.createdAt?.toMillis?.() || 0;
-        return bTime - aTime;
-      });
+    return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as VerificationRequest));
   } catch (error) {
     console.error("[VerificationService] Error getting all requests:", error);
     return [];

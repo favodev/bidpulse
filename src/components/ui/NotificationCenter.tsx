@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useLanguage } from "@/i18n";
-import { NotificationType } from "@/types/notification.types";
+import { Notification, NotificationType } from "@/types/notification.types";
 import { formatDistanceToNow } from "@/lib/utils";
 
 export function NotificationCenter() {
@@ -108,7 +108,7 @@ export function NotificationCenter() {
     await requestPushPermission();
   };
 
-  const formatNewMessageBody = (notification: any) => {
+  const formatNewMessageBody = (notification: Notification) => {
     const template = t.notifications?.newMessageBody;
     if (template) {
       return template

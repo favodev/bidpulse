@@ -386,10 +386,17 @@ export async function addSellerResponse(
       throw new Error("No tienes permiso para responder a esta review");
     }
 
+    // Sanitize and limit response
+    const { sanitizeText: sanitize } = await import("@/lib/sanitize");
+    const sanitizedComment = sanitize(comment).slice(0, 2000);
+    if (!sanitizedComment.trim()) {
+      throw new Error("La respuesta no puede estar vacía");
+    }
+
     const reviewRef = doc(db, REVIEWS_COLLECTION, reviewId);
     await updateDoc(reviewRef, {
       sellerResponse: {
-        comment,
+        comment: sanitizedComment,
         respondedAt: serverTimestamp(),
       },
       updatedAt: serverTimestamp(),

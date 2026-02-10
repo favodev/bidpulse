@@ -12,6 +12,7 @@ import {
   updateDoc,
   increment,
   Unsubscribe,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
@@ -22,7 +23,7 @@ export interface Favorite {
   id: string;
   userId: string;
   auctionId: string;
-  createdAt: Date;
+  createdAt: Timestamp;
 }
 
 export async function addToFavorites(userId: string, auctionId: string): Promise<void> {

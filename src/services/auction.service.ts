@@ -229,14 +229,34 @@ export async function createAuction(
   }
 }
 
+// Allowed fields for client-side auction updates
+const ALLOWED_UPDATE_FIELDS = new Set([
+  "title", "description", "category", "images",
+  "startingPrice", "reservePrice", "bidIncrement",
+  "startTime", "endTime", "status",
+]);
+
 export async function updateAuction(
   auctionId: string,
   data: Partial<Auction>
 ): Promise<void> {
   try {
     const docRef = doc(db, AUCTIONS_COLLECTION, auctionId);
+    // Filter to only allowed fields to prevent overwriting sensitive data
+    const safeData: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (ALLOWED_UPDATE_FIELDS.has(key)) {
+        safeData[key] = value;
+      }
+    }
+    // Allow status updates from internal finalization
+    if (data.status === "ended") {
+      if (data.winnerId !== undefined) safeData.winnerId = data.winnerId;
+      if (data.winnerName !== undefined) safeData.winnerName = data.winnerName;
+      if (data.finalPrice !== undefined) safeData.finalPrice = data.finalPrice;
+    }
     await updateDoc(docRef, {
-      ...data,
+      ...safeData,
       updatedAt: serverTimestamp(),
     });
   } catch (error) {
@@ -369,6 +389,23 @@ export async function finalizeAuction(auctionId: string): Promise<boolean> {
       winnerName: auction.highestBidderName,
       finalPrice: auction.currentBid,
     });
+
+    // Send notifications
+    if (auction.highestBidderId) {
+      notifyAuctionWon(
+        auction.highestBidderId,
+        auctionId,
+        auction.title,
+        auction.currentBid
+      ).catch((err) => console.error("[AuctionService] Error notifying winner:", err));
+    }
+    notifyAuctionEnded(
+      auction.sellerId,
+      auctionId,
+      auction.title,
+      auction.currentBid,
+      auction.highestBidderName
+    ).catch((err) => console.error("[AuctionService] Error notifying seller:", err));
 
     console.log(`[AuctionService] Auction ${auctionId} finalized`);
     return true;
@@ -519,7 +556,7 @@ export async function checkAndActivateAuction(auction: Auction): Promise<Auction
 
 export async function endAuctionEarly(
   auctionId: string,
-  sellerId: string
+  _sellerId?: string
 ): Promise<boolean> {
   try {
     const token = await auth.currentUser?.getIdToken();

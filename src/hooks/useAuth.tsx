@@ -48,10 +48,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        loadUserProfile(firebaseUser.uid);
+        await loadUserProfile(firebaseUser.uid);
         // Set session via API for HttpOnly cookie
         firebaseUser
           .getIdToken()

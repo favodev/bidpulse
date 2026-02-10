@@ -10,6 +10,7 @@ import {
   onSnapshot,
   runTransaction,
   setDoc,
+  updateDoc,
   serverTimestamp,
   Timestamp,
   Unsubscribe,
@@ -121,7 +122,7 @@ export async function setAutoBidConfig(
       maxAmount,
       active: true,
       updatedAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
+      ...(!((await getDoc(autoBidRef)).exists()) ? { createdAt: serverTimestamp() } : {}),
     },
     { merge: true }
   );
@@ -274,7 +275,10 @@ async function placeBidInternal(
 
       transaction.set(bidRef, bidData);
 
-      // 7. Marcar puja anterior como no ganadora (handled by isWinning field on new bid)
+      // 7. Marcar pujas anteriores como no ganadoras
+      if (auction.highestBidderId && auction.highestBidderId !== bidderId) {
+        // We can't query inside a transaction, so we'll update outside
+      }
 
       // 8. Actualizar la subasta
       const auctionUpdate: Record<string, unknown> = {
@@ -304,6 +308,22 @@ async function placeBidInternal(
         },
       };
     });
+
+    // Mark previous winning bids as isWinning: false (outside transaction — can't query in Firestore transactions)
+    if (result.success) {
+      const previousWinningBidsQ = query(
+        bidsRef,
+        where("auctionId", "==", auctionId),
+        where("isWinning", "==", true)
+      );
+      const prevWinningSnap = await getDocs(previousWinningBidsQ);
+      const updatePromises = prevWinningSnap.docs
+        .filter((d) => d.id !== result.bidId)
+        .map((d) => updateDoc(d.ref, { isWinning: false }));
+      await Promise.all(updatePromises).catch((err) =>
+        console.error("[BidService] Error clearing isWinning flags:", err)
+      );
+    }
 
     // Enviar notificaciones fuera de la transacción
     if (result.success && result._notificationData) {

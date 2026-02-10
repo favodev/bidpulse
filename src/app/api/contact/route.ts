@@ -7,7 +7,10 @@ import { validateContactForm } from "@/lib/validation";
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email de destino para los mensajes de contacto
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL || "fernando.aurelio.ortiz@gmail.com";
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL;
+if (!CONTACT_EMAIL) {
+  console.warn("[API Contact] CONTACT_EMAIL env var not set");
+}
 
 // Rate limiting en memoria para el servidor
 const contactRateLimit = new Map<string, number[]>();
@@ -55,6 +58,15 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Todos los campos son requeridos" },
         { status: 400 }
+      );
+    }
+
+    // Validar que CONTACT_EMAIL esté configurado
+    if (!CONTACT_EMAIL) {
+      console.error("[API Contact] CONTACT_EMAIL not configured");
+      return NextResponse.json(
+        { error: "Servicio de contacto no configurado" },
+        { status: 503 }
       );
     }
 

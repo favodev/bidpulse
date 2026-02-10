@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, RotateCw, Check, Loader2 } from "lucide-react";
@@ -37,6 +37,15 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel, isUploading }
   const [rotation, setRotation] = useState(0);
   const { t } = useLanguage();
 
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isUploading) onCancel();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onCancel, isUploading]);
+
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
     setCrop(centerAspectCrop(width, height, 1)); // Aspect ratio 1:1 para foto de perfil
@@ -60,16 +69,18 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel, isUploading }
 
     const pixelRatio = window.devicePixelRatio || 1;
 
-    canvas.width = completedCrop.width * scaleX * pixelRatio;
-    canvas.height = completedCrop.height * scaleY * pixelRatio;
-
-    ctx.scale(pixelRatio, pixelRatio);
-    ctx.imageSmoothingQuality = "high";
-
     const cropX = completedCrop.x * scaleX;
     const cropY = completedCrop.y * scaleY;
     const cropWidth = completedCrop.width * scaleX;
     const cropHeight = completedCrop.height * scaleY;
+
+    // For 90° and 270° rotations, swap canvas dimensions
+    const isRotated90or270 = rotation === 90 || rotation === 270;
+    canvas.width = (isRotated90or270 ? cropHeight : cropWidth) * pixelRatio;
+    canvas.height = (isRotated90or270 ? cropWidth : cropHeight) * pixelRatio;
+
+    ctx.scale(pixelRatio, pixelRatio);
+    ctx.imageSmoothingQuality = "high";
 
     // Manejar rotación
     const centerX = canvas.width / (2 * pixelRatio);
@@ -113,7 +124,7 @@ export function ImageCropper({ imageSrc, onCropComplete, onCancel, isUploading }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={t.common.cropImage}>
       <div className="bg-slate-900 rounded-2xl max-w-lg w-full p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">{t.common.cropImage}</h3>

@@ -20,26 +20,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { getAuctions, deleteAuction } from "@/services/auction.service";
 import { Auction } from "@/types/auction.types";
-import { Timestamp } from "firebase/firestore";
 import { useLanguage } from "@/i18n";
+import { formatTimeRemaining } from "@/lib/utils";
 
 type TabType = "active" | "ended" | "all";
-
-function formatTimeRemaining(endTime: Timestamp, endedText: string): string {
-  const now = new Date();
-  const end = endTime.toDate();
-  const diff = end.getTime() - now.getTime();
-
-  if (diff <= 0) return endedText;
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
-}
 
 function AuctionRow({
   auction,
@@ -54,7 +38,7 @@ function AuctionRow({
   const [showMenu, setShowMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const isEnded = auction.status === "ended" || auction.endTime.toDate() < new Date();
-  const timeLeft = formatTimeRemaining(auction.endTime, t.auction.ended);
+  const timeLeft = formatTimeRemaining(auction.endTime.toDate(), t.auction.ended);
 
   const handleDelete = async () => {
     if (!confirm(t.myAuctions.deleteConfirm)) return;

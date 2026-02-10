@@ -273,13 +273,17 @@ export async function markAllAsRead(userId: string): Promise<NotificationResult>
     );
 
     const querySnapshot = await getDocs(q);
-    const batch = writeBatch(db);
-
-    querySnapshot.forEach((docSnapshot) => {
-      batch.update(docSnapshot.ref, { read: true });
-    });
-
-    await batch.commit();
+    
+    // Firestore batches are limited to 500 operations - chunk if needed
+    const docs = querySnapshot.docs;
+    for (let i = 0; i < docs.length; i += 500) {
+      const chunk = docs.slice(i, i + 500);
+      const batch = writeBatch(db);
+      chunk.forEach((docSnapshot) => {
+        batch.update(docSnapshot.ref, { read: true });
+      });
+      await batch.commit();
+    }
     return { success: true };
   } catch (error) {
     console.error("[NotificationService] Error marking all as read:", error);
@@ -312,13 +316,17 @@ export async function clearAllNotifications(
   try {
     const q = query(notificationsRef, where("userId", "==", userId));
     const querySnapshot = await getDocs(q);
-    const batch = writeBatch(db);
-
-    querySnapshot.forEach((docSnapshot) => {
-      batch.delete(docSnapshot.ref);
-    });
-
-    await batch.commit();
+    
+    // Firestore batches are limited to 500 operations - chunk if needed
+    const docs = querySnapshot.docs;
+    for (let i = 0; i < docs.length; i += 500) {
+      const chunk = docs.slice(i, i + 500);
+      const batch = writeBatch(db);
+      chunk.forEach((docSnapshot) => {
+        batch.delete(docSnapshot.ref);
+      });
+      await batch.commit();
+    }
     return { success: true };
   } catch (error) {
     console.error("[NotificationService] Error clearing notifications:", error);

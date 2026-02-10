@@ -19,29 +19,13 @@ import { getUserBids } from "@/services/bid.service";
 import { getAuction } from "@/services/auction.service";
 import { Bid } from "@/types/bid.types";
 import { Auction } from "@/types/auction.types";
-import { Timestamp } from "firebase/firestore";
 import { useLanguage } from "@/i18n";
+import { formatTimeRemaining } from "@/lib/utils";
 
 type TabType = "active" | "won" | "outbid" | "all";
 
 interface BidWithAuction extends Bid {
   auction?: Auction;
-}
-
-function formatTimeRemaining(endTime: Timestamp, t: { auction: { ended: string } }): string {
-  const now = new Date();
-  const end = endTime.toDate();
-  const diff = end.getTime() - now.getTime();
-
-  if (diff <= 0) return t.auction.ended;
-
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
 }
 
 function BidCard({ bid, t }: { bid: BidWithAuction; t: ReturnType<typeof useLanguage>['t'] }) {
@@ -148,7 +132,7 @@ function BidCard({ bid, t }: { bid: BidWithAuction; t: ReturnType<typeof useLang
             <div className="flex items-center gap-1">
               <Clock className="w-4 h-4 text-slate-500" />
               <span className={isEnded ? "text-red-400" : "text-slate-400"}>
-                {formatTimeRemaining(auction.endTime, t)}
+                {formatTimeRemaining(auction.endTime.toDate(), t.auction.ended)}
               </span>
             </div>
           </div>
@@ -205,17 +189,26 @@ export default function MyBidsPage() {
         });
 
         // Cargar info de cada subasta
-        const bidsWithAuctions: BidWithAuction[] = [];
-        for (const [auctionId, bid] of bidsByAuction.entries()) {
-          try {
-            const auction = await getAuction(auctionId);
+const auctionIds = Array.from(bidsByAuction.keys());
+          const auctionResults = await Promise.all(
+            auctionIds.map(async (auctionId) => {
+              try {
+                return await getAuction(auctionId);
+              } catch (err) {
+                console.error(`Error loading auction ${auctionId}:`, err);
+                return null;
+              }
+            })
+          );
+
+          const bidsWithAuctions: BidWithAuction[] = [];
+          auctionIds.forEach((auctionId, index) => {
+            const auction = auctionResults[index];
+            const bid = bidsByAuction.get(auctionId)!;
             if (auction) {
               bidsWithAuctions.push({ ...bid, auction });
             }
-          } catch (err) {
-            console.error(`Error loading auction ${auctionId}:`, err);
-          }
-        }
+          });
 
         // Ordenar por fecha de fin (más próximas primero)
         bidsWithAuctions.sort((a, b) => {
