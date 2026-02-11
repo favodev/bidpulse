@@ -219,7 +219,7 @@ export function MessageCenterProvider({ children }: MessageCenterProviderProps) 
 
       <div className="fixed bottom-6 right-6 z-50" ref={panelRef}>
         {isOpen && (
-          <div className="absolute bottom-16 right-0 w-[22rem] sm:w-[24rem] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="absolute bottom-16 right-0 w-88 sm:w-96 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800">
               {activeConversation ? (
                 <div className="flex items-center gap-2">
@@ -270,7 +270,7 @@ export function MessageCenterProvider({ children }: MessageCenterProviderProps) 
               </div>
             </div>
 
-            <div className="max-h-[22rem] overflow-y-auto">
+            <div className="max-h-88 overflow-y-auto">
               {!user ? (
                 <div className="p-6 text-center">
                   <p className="text-slate-400 text-sm mb-4">
