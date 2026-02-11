@@ -471,7 +471,9 @@ export default function ProfilePage() {
           ) : profile?.isVerified || verificationEligibility?.details.isAlreadyVerified ? (
             /* Ya verificado */
             <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-4">
-              <CheckCircle className="w-6 h-6 text-emerald-400 flex-shrink-0" />
+              <span className="w-6 h-6 text-emerald-400 shrink-0">
+                <CheckCircle size={24} />
+              </span>
               <div>
                 <p className="text-emerald-400 font-semibold">
                   {t.verification?.statusApproved || "¡Verificado!"}
@@ -484,7 +486,9 @@ export default function ProfilePage() {
           ) : verificationRequest?.status === "pending" ? (
             /* Solicitud pendiente */
             <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
-              <Clock className="w-6 h-6 text-amber-400 flex-shrink-0" />
+              <span className="w-6 h-6 text-amber-400 shrink-0">
+                <Clock size={24} />
+              </span>
               <div>
                 <p className="text-amber-400 font-semibold">
                   {t.verification?.statusPending || "Solicitud en revisión"}
@@ -500,7 +504,9 @@ export default function ProfilePage() {
               {/* Estado anterior rechazado */}
               {verificationRequest?.status === "rejected" && (
                 <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-2">
-                  <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                  <span className="w-5 h-5 text-red-400 shrink-0">
+                    <XCircle size={20} />
+                  </span>
                   <div>
                     <p className="text-red-400 text-sm font-semibold">
                       {t.verification?.statusRejected || "Solicitud rechazada"}
