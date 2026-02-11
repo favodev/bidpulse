@@ -13,6 +13,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { sanitizeText } from "@/lib/sanitize";
 
 const CATEGORIES_COLLECTION = "categories";
 const categoriesRef = collection(db, CATEGORIES_COLLECTION);
@@ -79,6 +80,9 @@ export async function createCategory(data: CreateCategoryData): Promise<string> 
   try {
     const docRef = await addDoc(categoriesRef, {
       ...data,
+      nameEs: sanitizeText(data.nameEs),
+      nameEn: sanitizeText(data.nameEn),
+      slug: sanitizeText(data.slug),
       icon: data.icon || "Package",
       gradient: data.gradient || "from-slate-900/80 to-slate-950/80",
       image: data.image || "",
@@ -102,8 +106,12 @@ export async function updateCategory(
 ): Promise<void> {
   try {
     const docRef = doc(db, CATEGORIES_COLLECTION, categoryId);
+    const sanitizedData = { ...data };
+    if (typeof sanitizedData.nameEs === "string") sanitizedData.nameEs = sanitizeText(sanitizedData.nameEs);
+    if (typeof sanitizedData.nameEn === "string") sanitizedData.nameEn = sanitizeText(sanitizedData.nameEn);
+    if (typeof sanitizedData.slug === "string") sanitizedData.slug = sanitizeText(sanitizedData.slug as string);
     await updateDoc(docRef, {
-      ...data,
+      ...sanitizedData,
       updatedAt: serverTimestamp(),
     });
   } catch (error) {

@@ -60,6 +60,7 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
   const [loading, setLoading] = useState(true);
   const [pushPermission, setPushPermission] = useState<NotificationPermission | null>(null);
   const prevNotificationsCountRef = useRef(0);
+  const pushPermissionRef = useRef<NotificationPermission | null>(null);
 
   // Verificar soporte de push
   const pushSupported = typeof window !== "undefined" && isPushSupported();
@@ -67,7 +68,9 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
   // Cargar permiso de push al inicio
   useEffect(() => {
     if (pushSupported) {
-      setPushPermission(getPushPermission());
+      const perm = getPushPermission();
+      setPushPermission(perm);
+      pushPermissionRef.current = perm;
     }
   }, [pushSupported]);
 
@@ -91,7 +94,7 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
           if (
             latestNotification &&
             !latestNotification.read &&
-            pushPermission === "granted"
+            pushPermissionRef.current === "granted"
           ) {
             showLocalNotification(latestNotification.title, {
               body: latestNotification.message,
@@ -114,7 +117,7 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
       unsubscribeNotifications();
       unsubscribeUnread();
     };
-  }, [user, pushPermission]);
+  }, [user]);
 
   // Marcar como leída
   const handleMarkAsRead = useCallback(async (notificationId: string) => {
@@ -146,6 +149,7 @@ export function NotificationsProvider({ children }: NotificationsProviderProps) 
   const handleRequestPushPermission = useCallback(async () => {
     const permission = await requestPushPermission();
     setPushPermission(permission);
+    pushPermissionRef.current = permission;
     return permission;
   }, []);
 

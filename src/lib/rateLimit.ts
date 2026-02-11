@@ -128,14 +128,26 @@ export function cleanupRateLimitStore(maxAgeMs = 600_000): void {
   const now = Date.now();
   for (const [key, entry] of rateLimitStore.entries()) {
     // Eliminar si todos los timestamps son viejos
-    const newest = Math.max(...entry.timestamps, 0);
+    let newest = 0;
+    for (const ts of entry.timestamps) {
+      if (ts > newest) newest = ts;
+    }
     if (now - newest > maxAgeMs) {
       rateLimitStore.delete(key);
     }
   }
 }
 
-// Auto-cleanup cada 10 minutos
+// Auto-cleanup cada 10 minutos (store interval id so it can be cleared)
+let _cleanupIntervalId: ReturnType<typeof setInterval> | null = null;
 if (typeof window !== "undefined") {
-  setInterval(() => cleanupRateLimitStore(), 600_000);
+  _cleanupIntervalId = setInterval(() => cleanupRateLimitStore(), 600_000);
+}
+
+/** Clear the cleanup interval (useful for HMR or testing) */
+export function stopRateLimitCleanup(): void {
+  if (_cleanupIntervalId !== null) {
+    clearInterval(_cleanupIntervalId);
+    _cleanupIntervalId = null;
+  }
 }

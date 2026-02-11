@@ -1,20 +1,33 @@
 {
-  "name": "BidPulse",
+  "name": "BidPulse - Subastas en Tiempo Real",
   "short_name": "BidPulse",
+  "description": "Plataforma de subastas en tiempo real. Puja, compite y gana.",
   "start_url": "/",
+  "scope": "/",
+  "id": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",
   "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/assets/logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/assets/logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
-  ]
+  ],
+  "categories": ["shopping", "business"]
 }

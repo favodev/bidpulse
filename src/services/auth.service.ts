@@ -89,6 +89,13 @@ export const AuthService = {
       await updateProfile(userCredential.user, { displayName });
       await sendEmailVerification(userCredential.user);
 
+      // Create Firestore profile for email/password signups
+      await createUserProfile(
+        userCredential.user.uid,
+        email,
+        displayName
+      );
+
       return {
         success: true,
         data: userCredential.user,

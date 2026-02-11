@@ -1,26 +1,28 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getAdminDb } from "@/lib/firebaseAdmin";
-import { Timestamp } from "firebase-admin/firestore";
+import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
+import { Timestamp, FieldValue } from "firebase-admin/firestore";
 
-/**
- * POST /api/auction/finalize
- * Server-side finalization of expired auctions and activation of scheduled ones.
- * Protected by a secret token to prevent unauthorized access.
- */
 export async function POST(request: NextRequest) {
   try {
-    // Verify authorization: accept either a secret cron token or a valid session
+    // Verify authorization
     const cronSecret = process.env.CRON_SECRET;
     const authHeader = request.headers.get("authorization");
     const hasCronAuth = cronSecret && authHeader === `Bearer ${cronSecret}`;
 
-    // Also accept internal calls (from client-side polling) without strict auth
-    // since this is an idempotent operation that only finalizes expired auctions
     if (!hasCronAuth) {
+      // Require authenticated session
       const session = request.cookies.get("bp_session")?.value;
       if (!session) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      // Verify the session belongs to an admin or valid user
+      try {
+        const auth = getAdminAuth();
+        await auth.verifyIdToken(session);
+      } catch {
+        return NextResponse.json({ error: "Invalid session" }, { status: 401 });
       }
     }
 
@@ -40,48 +42,47 @@ export async function POST(request: NextRequest) {
 
     for (const docSnap of expiredSnap.docs) {
       try {
-        const data = docSnap.data();
-        
-        const updateData: Record<string, unknown> = {
-          status: "ended",
-          updatedAt: Timestamp.now(),
-        };
+        // Use a transaction to atomically finalize and update stats
+        await db.runTransaction(async (transaction) => {
+          const auctionRef = docSnap.ref;
+          const auctionSnap = await transaction.get(auctionRef);
+          const data = auctionSnap.data();
+          if (!data || data.status !== "active") return; // Already finalized
 
-        if (data.highestBidderId) {
-          updateData.winnerId = data.highestBidderId;
-          updateData.winnerName = data.highestBidderName || null;
-          updateData.finalPrice = data.currentBid || null;
-        }
+          const updateData: Record<string, unknown> = {
+            status: "ended",
+            updatedAt: Timestamp.now(),
+          };
 
-        await docSnap.ref.update(updateData);
+          if (data.highestBidderId) {
+            updateData.winnerId = data.highestBidderId;
+            updateData.winnerName = data.highestBidderName || null;
+            updateData.finalPrice = data.currentBid || null;
+          }
+
+          transaction.update(auctionRef, updateData);
+
+          // Update winner stats atomically with FieldValue.increment
+          if (data.highestBidderId) {
+            const winnerRef = db.collection("users").doc(data.highestBidderId);
+            transaction.update(winnerRef, {
+              "stats.auctionsWon": FieldValue.increment(1),
+              "stats.totalSpent": FieldValue.increment(data.currentBid || 0),
+              updatedAt: Timestamp.now(),
+            });
+          }
+
+          // Update seller stats atomically with FieldValue.increment
+          if (data.sellerId && data.highestBidderId) {
+            const sellerRef = db.collection("users").doc(data.sellerId);
+            transaction.update(sellerRef, {
+              "stats.totalEarned": FieldValue.increment(data.currentBid || 0),
+              updatedAt: Timestamp.now(),
+            });
+          }
+        });
+
         finalizedCount++;
-
-        // Update winner stats
-        if (data.highestBidderId) {
-          const winnerRef = db.collection("users").doc(data.highestBidderId);
-          const winnerSnap = await winnerRef.get();
-          if (winnerSnap.exists) {
-            const winnerData = winnerSnap.data();
-            await winnerRef.update({
-              "stats.auctionsWon": (winnerData?.stats?.auctionsWon || 0) + 1,
-              "stats.totalSpent": (winnerData?.stats?.totalSpent || 0) + (data.currentBid || 0),
-              updatedAt: Timestamp.now(),
-            });
-          }
-        }
-
-        // Update seller stats
-        if (data.sellerId && data.highestBidderId) {
-          const sellerRef = db.collection("users").doc(data.sellerId);
-          const sellerSnap = await sellerRef.get();
-          if (sellerSnap.exists) {
-            const sellerData = sellerSnap.data();
-            await sellerRef.update({
-              "stats.totalEarned": (sellerData?.stats?.totalEarned || 0) + (data.currentBid || 0),
-              updatedAt: Timestamp.now(),
-            });
-          }
-        }
       } catch (err) {
         console.error(`[FinalizeAPI] Failed to finalize ${docSnap.id}:`, err);
       }

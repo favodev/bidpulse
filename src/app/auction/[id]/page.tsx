@@ -216,7 +216,7 @@ export default function AuctionDetailPage() {
     setEndAuctionError("");
 
     try {
-      const success = await endAuctionEarly(auction.id, user.uid);
+      const success = await endAuctionEarly(auction.id);
       if (!success) {
         setEndAuctionError(t.auction.endEarlyError || "No se pudo finalizar la subasta");
       }

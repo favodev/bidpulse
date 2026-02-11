@@ -1,17 +1,3 @@
-/**
- * Servicio de Verificación de Vendedor
- * Gestiona solicitudes de verificación de vendedores.
- * 
- * Criterios para ser elegible:
- * - Email verificado
- * - Al menos 1 subasta creada
- * - Cuenta con al menos 7 días de antigüedad
- * - No tener una solicitud pendiente
- * 
- * La verificación otorga al vendedor un badge visible que genera
- * confianza en los compradores.
- */
-
 import {
   collection,
   doc,

@@ -2,7 +2,6 @@ import {
   collection,
   doc,
   addDoc,
-  getDoc,
   getDocs,
   updateDoc,
   deleteDoc,
@@ -12,7 +11,6 @@ import {
   limit,
   onSnapshot,
   serverTimestamp,
-  Timestamp,
   writeBatch,
   Unsubscribe,
 } from "firebase/firestore";

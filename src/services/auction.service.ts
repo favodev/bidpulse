@@ -26,7 +26,6 @@ import { notifyAuctionWon, notifyAuctionEnded } from "./notification.service";
 import { sanitizeText, sanitizeMultiline, sanitizeNumber } from "@/lib/sanitize";
 import { validateCreateAuction } from "@/lib/validation";
 import { incrementUserStat } from "./user.service";
-import { uploadAuctionImages } from "./storage.service";
 
 const AUCTIONS_COLLECTION = "auctions";
 const auctionsRef = collection(db, AUCTIONS_COLLECTION);
@@ -94,15 +93,6 @@ export async function getAuctions(filters: AuctionFilters = {}): Promise<Auction
     console.error("[AuctionService] Error getting auctions:", error);
     throw error;
   }
-}
-
-export async function getActiveAuctions(limitCount = 20): Promise<Auction[]> {
-  return getAuctions({
-    status: "active",
-    sortBy: "endTime",
-    sortOrder: "asc",
-    limit: limitCount,
-  });
 }
 
 export async function getEndingSoonAuctions(limitCount = 10): Promise<Auction[]> {
@@ -181,7 +171,7 @@ export async function createAuction(
       title: sanitizedTitle,
       description: sanitizedDescription,
       category: data.category,
-      images: [], // Will be updated after upload to Storage
+      images: data.images || [], // Store Base64 images directly in Firestore
       startingPrice: sanitizedStartingPrice,
       bidIncrement: sanitizedBidIncrement,
       sellerId,
@@ -206,16 +196,6 @@ export async function createAuction(
     }
 
     const docRef = await addDoc(auctionsRef, auctionData);
-
-    // Upload images to Firebase Storage and update the doc with URLs
-    if (data.images && data.images.length > 0) {
-      try {
-        const imageUrls = await uploadAuctionImages(docRef.id, data.images);
-        await updateDoc(doc(db, AUCTIONS_COLLECTION, docRef.id), { images: imageUrls });
-      } catch (imgErr) {
-        console.error("[AuctionService] Error uploading images:", imgErr);
-      }
-    }
 
     // Increment seller's auctionsCreated stat
     incrementUserStat(sellerId, "auctionsCreated", 1).catch((err) =>
@@ -296,44 +276,6 @@ export function subscribeToAuction(
     (error) => {
       console.error("[AuctionService] Subscription error:", error);
     }
-  );
-}
-
-export function subscribeToActiveAuctions(
-  callback: (auctions: Auction[]) => void,
-  limitCount = 20
-): Unsubscribe {
-  const q = query(
-    auctionsRef,
-    where("status", "==", "active"),
-    orderBy("endTime", "asc"),
-    limit(limitCount)
-  );
-
-  return onSnapshot(
-    q,
-    (querySnapshot) => {
-      const auctions: Auction[] = [];
-      querySnapshot.forEach((doc) => {
-        auctions.push({
-          id: doc.id,
-          ...doc.data(),
-        } as Auction);
-      });
-      callback(auctions);
-    },
-    (error) => {
-      console.error("[AuctionService] Subscription error:", error);
-    }
-  );
-}
-
-export function isAuctionActive(auction: Auction): boolean {
-  const now = Timestamp.now();
-  return (
-    auction.status === "active" &&
-    auction.startTime.toMillis() <= now.toMillis() &&
-    auction.endTime.toMillis() > now.toMillis()
   );
 }
 
@@ -488,7 +430,10 @@ export async function checkAndFinalizeAuction(auction: Auction): Promise<Auction
   const isActive = auction.status === "active";
 
   if (isExpired && isActive) {
-    await finalizeAuction(auction.id);
+    const currentUid = auth.currentUser?.uid;
+    if (currentUid && currentUid === auction.sellerId) {
+      await finalizeAuction(auction.id);
+    }
     return {
       ...auction,
       status: "ended",
@@ -545,9 +490,13 @@ export async function checkAndActivateAuction(auction: Auction): Promise<Auction
   const shouldActivate = auction.status === "scheduled" && auction.startTime.toMillis() <= now.toMillis();
 
   if (shouldActivate) {
-    await updateAuction(auction.id, {
-      status: "active" as AuctionStatus,
-    });
+    // Only try to write to Firestore if the current user is the seller
+    const currentUid = auth.currentUser?.uid;
+    if (currentUid && currentUid === auction.sellerId) {
+      await updateAuction(auction.id, {
+        status: "active" as AuctionStatus,
+      });
+    }
     return { ...auction, status: "active" };
   }
 
@@ -555,8 +504,7 @@ export async function checkAndActivateAuction(auction: Auction): Promise<Auction
 }
 
 export async function endAuctionEarly(
-  auctionId: string,
-  _sellerId?: string
+  auctionId: string
 ): Promise<boolean> {
   try {
     const token = await auth.currentUser?.getIdToken();

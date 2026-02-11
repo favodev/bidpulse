@@ -16,7 +16,9 @@ import { useLanguage } from "@/i18n";
 async function compressImage(file: File, maxWidth: number = 800): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = document.createElement("img");
+    const objectUrl = URL.createObjectURL(file);
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
       const canvas = document.createElement("canvas");
       const ratio = Math.min(maxWidth / img.width, 1);
       canvas.width = img.width * ratio;
@@ -32,8 +34,11 @@ async function compressImage(file: File, maxWidth: number = 800): Promise<string
       const base64 = canvas.toDataURL("image/jpeg", 0.7);
       resolve(base64);
     };
-    img.onerror = reject;
-    img.src = URL.createObjectURL(file);
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Error loading image"));
+    };
+    img.src = objectUrl;
   });
 }
 

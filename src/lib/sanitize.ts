@@ -65,7 +65,11 @@ export function sanitizeEmail(str: string): string {
   if (typeof str !== "string") return "";
   const cleaned = str.trim().toLowerCase();
   // Solo permitir caracteres válidos de email
-  return cleaned.replace(/[^a-z0-9@._+\-]/g, "");
+  const sanitized = cleaned.replace(/[^a-z0-9@._+\-]/g, "");
+  // Ensure only one @ sign exists
+  const atCount = (sanitized.match(/@/g) || []).length;
+  if (atCount !== 1) return "";
+  return sanitized;
 }
 
 /**
@@ -99,6 +103,8 @@ export function sanitizeObject<T extends Record<string, unknown>>(obj: T): T {
     const value = result[key];
     if (typeof value === "string") {
       (result as Record<string, unknown>)[key] = sanitizeText(value);
+    } else if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+      (result as Record<string, unknown>)[key] = sanitizeObject(value as Record<string, unknown>);
     }
   }
   return result;

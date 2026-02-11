@@ -39,12 +39,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useLanguage } from "@/i18n";
 import { getAuctions } from "@/services/auction.service";
-import { getUserBids, getAuctionBids } from "@/services/bid.service";
+import { getAuctionBids } from "@/services/bid.service";
 import { getUserProfile } from "@/services/user.service";
 import { Auction } from "@/types/auction.types";
 import { Bid } from "@/types/bid.types";
 import { UserProfile } from "@/types/user.types";
-import { Timestamp } from "firebase/firestore";
 
 const PIE_COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 

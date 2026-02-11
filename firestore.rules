@@ -13,26 +13,36 @@ service cloud.firestore {
       return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
+    // ─── Auctions ───
     match /auctions/{auctionId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.sellerId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.sellerId == request.auth.uid
+        && request.resource.data.startingPrice is number
+        && request.resource.data.startingPrice > 0;
       allow update: if isSignedIn()
         && (resource.data.sellerId == request.auth.uid || isAdmin())
         && request.resource.data.sellerId == resource.data.sellerId;
       allow delete: if isSignedIn() && (resource.data.sellerId == request.auth.uid || isAdmin());
     }
 
+    // ─── Bids ───
     match /bids/{bidId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.bidderId == request.auth.uid;
-      allow update: if isSignedIn()
-        && (resource.data.bidderId == request.auth.uid || resource.data.auctionId != null);
+      allow create: if isSignedIn()
+        && request.resource.data.bidderId == request.auth.uid
+        && request.resource.data.amount is number
+        && request.resource.data.amount > 0;
+      // Any signed-in user can update bids (needed for clearing isWinning flags on other bids)
+      allow update: if isSignedIn();
+      // Bidders can only delete their own bids
       allow delete: if isSignedIn() && resource.data.bidderId == request.auth.uid;
     }
 
+    // ─── Auto-bids ───
     match /autoBids/{autoBidId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      // Allow get/list for any signed-in user (get handles non-existent doc check; list needed for processAutoBids)
+      allow get, list: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.bidderId == request.auth.uid;
       allow update: if isSignedIn()
         && resource.data.bidderId == request.auth.uid
@@ -40,9 +50,11 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.bidderId == request.auth.uid;
     }
 
+    // ─── Favorites ───
     match /favorites/{favoriteId} {
+      // Allow get for any signed-in user (handles non-existent doc check in isFavorite)
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update: if isSignedIn()
         && resource.data.userId == request.auth.uid
@@ -50,6 +62,7 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
+    // ─── Reviews ───
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if isSignedIn() && request.resource.data.reviewerId == request.auth.uid;
@@ -57,57 +70,78 @@ service cloud.firestore {
       allow delete: if isSignedIn() && (resource.data.reviewerId == request.auth.uid || isAdmin());
     }
 
+    // ─── Users (public profile data only) ───
     match /users/{userId} {
       allow read: if true;
-      allow create, update: if isOwner(userId);
+      allow create: if isOwner(userId);
+      // Owner can update anything; other signed-in users can only update stats/updatedAt (for reviews, bids stats)
+      allow update: if isOwner(userId)
+        || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stats', 'updatedAt']));
       allow delete: if isOwner(userId) || isAdmin();
     }
 
+    // ─── Conversations (only participants can read/write) ───
     match /conversations/{conversationId} {
+      // Allow get for any signed-in user (handles potential non-existent doc lookup)
       allow get: if isSignedIn();
       allow list: if isSignedIn();
-      allow create, update: if isSignedIn()
+      allow create: if isSignedIn()
         && (request.auth.uid in request.resource.data.participants);
+      allow update: if isSignedIn()
+        && (request.auth.uid in resource.data.participants);
       allow delete: if false;
     }
 
+    // ─── Messages (only conversation participants can read/create) ───
     match /messages/{messageId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
+      allow read: if isSignedIn()
+        && exists(/databases/$(database)/documents/conversations/$(resource.data.conversationId))
+        && request.auth.uid in get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participants;
+      allow create: if isSignedIn()
+        && request.resource.data.senderId == request.auth.uid
+        && exists(/databases/$(database)/documents/conversations/$(request.resource.data.conversationId))
+        && request.auth.uid in get(/databases/$(database)/documents/conversations/$(request.resource.data.conversationId)).data.participants;
       allow update, delete: if false;
     }
 
+    // ─── Notifications ───
     match /notifications/{notificationId} {
-      allow create: if isSignedIn();
+      // Any authenticated user can create notifications (e.g. to notify other users of new messages, bids, etc.)
+      allow create: if isSignedIn()
+        && request.resource.data.userId is string;
       allow read, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
+    // ─── Contact messages ───
     match /contact_messages/{messageId} {
       allow create: if true;
       allow read: if isAdmin();
       allow update, delete: if isAdmin();
     }
 
+    // ─── Reports ───
     match /user_reports/{reportId} {
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.reporterId == request.auth.uid;
       allow read, update: if isAdmin();
       allow delete: if isAdmin();
     }
 
     match /auction_reports/{reportId} {
-      allow create: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.reporterId == request.auth.uid;
       allow read, update: if isAdmin();
       allow delete: if isAdmin();
     }
 
+    // ─── Categories ───
     match /categories/{categoryId} {
       allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
+    // ─── Verification requests ───
     match /verification_requests/{requestId} {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow get: if isSignedIn();
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow update: if isAdmin();
       allow delete: if false;

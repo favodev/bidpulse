@@ -198,10 +198,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 
   const refreshUser = useCallback(() => {
-    if (auth.currentUser) {
-      auth.currentUser.reload().then(() => {
-        setUser({ ...auth.currentUser } as User);
-        loadUserProfile(auth.currentUser!.uid);
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      currentUser.reload().then(() => {
+        const reloadedUser = auth.currentUser;
+        if (reloadedUser) {
+          setUser({ ...reloadedUser } as User);
+          loadUserProfile(reloadedUser.uid);
+        }
       });
     }
   }, [loadUserProfile]);

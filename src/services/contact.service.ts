@@ -75,10 +75,10 @@ export async function sendContactMessage(data: {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: data.name,
-          email: data.email,
-          subject: data.subject,
-          message: data.message,
+          name: sanitized.name,
+          email: sanitized.email,
+          subject: sanitized.subject,
+          message: sanitized.message,
         }),
       });
 

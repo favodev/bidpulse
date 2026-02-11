@@ -36,7 +36,7 @@ interface MessageCenterProviderProps {
   children: ReactNode;
 }
 
-function formatTime(ts: any, locale: string) {
+function formatTime(ts: { toDate?: () => Date } | null | undefined, locale: string) {
   if (!ts?.toDate) return "";
   return ts.toDate().toLocaleTimeString(locale, {
     hour: "2-digit",
@@ -81,6 +81,7 @@ export function MessageCenterProvider({ children }: MessageCenterProviderProps) 
       return;
     }
 
+    let cancelled = false;
     let unsubscribeMessages: (() => void) | null = null;
     const conversationId = activeConversationId;
 
@@ -88,23 +89,25 @@ export function MessageCenterProvider({ children }: MessageCenterProviderProps) 
       setLoadingConversation(true);
       try {
         const data = await getConversation(conversationId);
+        if (cancelled) return;
         setActiveConversation(data);
         if (data) {
           unsubscribeMessages = subscribeToConversationMessages(
             conversationId,
             (newMessages) => {
-              setMessages(newMessages);
+              if (!cancelled) setMessages(newMessages);
             }
           );
         }
       } finally {
-        setLoadingConversation(false);
+        if (!cancelled) setLoadingConversation(false);
       }
     }
 
     loadConversation();
 
     return () => {
+      cancelled = true;
       if (unsubscribeMessages) unsubscribeMessages();
     };
   }, [activeConversationId]);

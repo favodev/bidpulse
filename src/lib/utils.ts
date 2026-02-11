@@ -27,7 +27,7 @@ export function formatDistanceToNow(date: Date): string {
   }
 
   const diffInMonths = Math.floor(diffInDays / 30);
-  if (diffInMonths < 12) {
+  if (diffInMonths > 0 && diffInMonths < 12) {
     return `Hace ${diffInMonths} ${diffInMonths === 1 ? "mes" : "meses"}`;
   }
 
@@ -76,13 +76,17 @@ export function truncate(text: string | undefined | null, maxLength: number): st
 }
 
 export function generateId(): string {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID().replace(/-/g, "").substring(0, 15);
   }
   // Fallback for older environments
-  const array = new Uint8Array(10);
-  crypto.getRandomValues(array);
-  return Array.from(array, (b) => b.toString(36)).join("").substring(0, 15);
+  if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
+    const array = new Uint8Array(10);
+    crypto.getRandomValues(array);
+    return Array.from(array, (b) => b.toString(36)).join("").substring(0, 15);
+  }
+  // Last resort fallback
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
 }
 
 export function debounce<T extends (...args: unknown[]) => unknown>(

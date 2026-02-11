@@ -26,6 +26,7 @@ import { Auction } from "@/types/auction.types";
 import { useAuth } from "@/hooks/useAuth";
 import { createUserReport } from "@/services/report.service";
 import type { ReportReason } from "@/types/report.types";
+import type { SellerRatingSummary } from "@/types/review.types";
 
 // Página de Perfil Público de Usuario
 export default function UserProfilePage() {
@@ -37,7 +38,7 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [auctions, setAuctions] = useState<Auction[]>([]);
-  const [ratingSummary, setRatingSummary] = useState<any | null>(null);
+  const [ratingSummary, setRatingSummary] = useState<SellerRatingSummary | null>(null);
   const [activeTab, setActiveTab] = useState<"listings" | "reviews">("listings");
   const [showReportModal, setShowReportModal] = useState(false);
   const [reporting, setReporting] = useState(false);

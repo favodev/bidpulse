@@ -95,11 +95,14 @@ export function Navbar() {
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
                     className="p-2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    aria-label="User menu"
+                    aria-expanded={userMenuOpen}
+                    aria-haspopup="true"
                   >
                     {userAvatar ? (
                       <img
                         src={userAvatar}
-                        alt=""
+                        alt="Avatar"
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
@@ -109,7 +112,7 @@ export function Navbar() {
 
                   {/* Dropdown */}
                   {userMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-lg py-2 z-50">
+                    <div className="absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-700 rounded-xl shadow-lg py-2 z-50" role="menu">
                       {/* Info del usuario */}
                     <div className="px-4 py-2 border-b border-slate-700">
                       <p className="text-white text-sm font-medium truncate">

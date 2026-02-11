@@ -122,7 +122,7 @@ export async function setAutoBidConfig(
       maxAmount,
       active: true,
       updatedAt: serverTimestamp(),
-      ...(!((await getDoc(autoBidRef)).exists()) ? { createdAt: serverTimestamp() } : {}),
+      createdAt: serverTimestamp(),
     },
     { merge: true }
   );
@@ -592,9 +592,9 @@ export async function deleteBid(auctionId: string, bidId: string, userId: string
     }
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error deleting bid:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "Error desconocido" };
   }
 }
 
@@ -606,10 +606,4 @@ export function calculateMinBid(currentBid: number): number {
   return currentBid + increment;
 }
 
-export function formatBidAmount(amount: number): string {
-  const formatted = new Intl.NumberFormat("es-CL", {
-    style: "decimal",
-    maximumFractionDigits: 0,
-  }).format(amount);
-  return `$${formatted} CLP`;
-}
+

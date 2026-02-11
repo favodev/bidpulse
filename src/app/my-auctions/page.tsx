@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/layout";
 import { Footer } from "@/components/layout";
-import { Button } from "@/components/ui";
+import { Button, ConfirmModal, Alert } from "@/components/ui";
 import { useAuth } from "@/hooks/useAuth";
 import { useCurrency } from "@/hooks/useCurrency";
 import { getAuctions, deleteAuction } from "@/services/auction.service";
@@ -37,21 +37,24 @@ function AuctionRow({
   const { formatPrice } = useCurrency();
   const [showMenu, setShowMenu] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const isEnded = auction.status === "ended" || auction.endTime.toDate() < new Date();
   const timeLeft = formatTimeRemaining(auction.endTime.toDate(), t.auction.ended);
 
   const handleDelete = async () => {
-    if (!confirm(t.myAuctions.deleteConfirm)) return;
     setDeleting(true);
+    setDeleteError("");
     try {
       await deleteAuction(auction.id);
       onDelete(auction.id);
     } catch (err) {
       console.error("Error deleting auction:", err);
-      alert("Error al eliminar la subasta");
+      setDeleteError("Error al eliminar la subasta");
     } finally {
       setDeleting(false);
       setShowMenu(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -114,7 +117,7 @@ function AuctionRow({
                       </Link>
                     )}
                     <button
-                      onClick={handleDelete}
+                      onClick={() => setShowDeleteConfirm(true)}
                       disabled={deleting}
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-slate-700 transition-colors disabled:opacity-50"
                     >
@@ -167,6 +170,19 @@ function AuctionRow({
           )}
         </div>
       </div>
+
+      {deleteError && (
+        <Alert variant="error" message={deleteError} className="mt-2" />
+      )}
+
+      <ConfirmModal
+        isOpen={showDeleteConfirm}
+        title={t.myAuctions.delete}
+        message={t.myAuctions.deleteConfirm}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+        confirmVariant="danger"
+      />
     </div>
   );
 }

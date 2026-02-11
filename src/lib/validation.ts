@@ -86,8 +86,6 @@ const VALID_CATEGORIES = [
   "garden", "pets", "baby", "health", "other",
 ];
 
-const VALID_CONTACT_SUBJECTS = ["general", "support", "billing", "report", "other"];
-
 /**
  * Valida datos de creación de subasta (server-side)
  */
@@ -158,11 +156,17 @@ function validateAuctionDates(startTime: unknown, endTime: unknown): ValidationR
   if (startTime && endTime) {
     const start = startTime instanceof Date ? startTime.getTime() : new Date(startTime as string).getTime();
     const end = endTime instanceof Date ? endTime.getTime() : new Date(endTime as string).getTime();
+    const now = Date.now();
 
     if (isNaN(start)) errors.push("Fecha de inicio inválida");
     if (isNaN(end)) errors.push("Fecha de fin inválida");
 
     if (!isNaN(start) && !isNaN(end)) {
+      // Check start time is in the future (with 1 minute tolerance)
+      if (start < now - 60_000) {
+        errors.push("La fecha de inicio debe ser en el futuro");
+      }
+
       if (end <= start) {
         errors.push("La fecha de fin debe ser posterior a la de inicio");
       }
@@ -211,10 +215,6 @@ export function validateContactForm(data: Record<string, unknown>): ValidationRe
     validateRequired(data.message, "Mensaje"),
     validateString(data.message, "Mensaje", 10, 5000),
   ];
-  // Validate subject against allowed values
-  if (typeof data.subject === "string" && !VALID_CONTACT_SUBJECTS.includes(data.subject)) {
-    results.push(fail(`Asunto inválido. Debe ser uno de: ${VALID_CONTACT_SUBJECTS.join(", ")}`));
-  }
   return merge(...results);
 }
 

@@ -12,7 +12,6 @@ import { db, auth } from "@/lib/firebase";
 import { UserProfile, UserSettings } from "@/types/user.types";
 import { sanitizeText, sanitizeMultiline } from "@/lib/sanitize";
 import { validateProfileUpdate } from "@/lib/validation";
-import { uploadAvatarImage } from "./storage.service";
 
 const USERS_COLLECTION = "users";
 
@@ -170,14 +169,11 @@ export async function uploadAvatar(userId: string, file: File): Promise<string> 
   try {
     // Compress image to 300px width and convert to Base64
     const base64Image = await compressImage(file, 300);
-    
-    // Upload to Firebase Storage instead of storing Base64 in Firestore
-    const downloadURL = await uploadAvatarImage(userId, base64Image);
 
-    // Save the URL in Firestore profile (this also updates Firebase Auth photoURL)
-    await updateUserProfile(userId, { avatar: downloadURL });
+    // Save the Base64 directly in Firestore profile
+    await updateUserProfile(userId, { avatar: base64Image });
 
-    return downloadURL;
+    return base64Image;
   } catch (error) {
     console.error("[UserService] Error uploading avatar:", error);
     throw error;

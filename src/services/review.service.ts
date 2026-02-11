@@ -15,6 +15,7 @@ import {
   runTransaction,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { sanitizeText, sanitizeMultiline } from "@/lib/sanitize";
 import {
   Review,
   CreateReviewData,
@@ -218,8 +219,9 @@ export async function createReview(
       const newReviewRef = doc(collection(db, REVIEWS_COLLECTION));
       const reviewData = {
         ...data,
+        comment: sanitizeMultiline(data.comment || ""),
         reviewerId,
-        reviewerName,
+        reviewerName: sanitizeText(reviewerName),
         reviewerAvatar: reviewerAvatar || null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),

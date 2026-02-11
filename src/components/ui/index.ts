@@ -10,3 +10,5 @@ export { CurrencySelector } from "./CurrencySelector";
 export { StarRating, StarRatingInput, RatingDistribution } from "./StarRating";
 export { ReportUserModal } from "./ReportUserModal";
 export { ReportAuctionModal } from "./ReportAuctionModal";
+export { PwaRegister } from "./PwaRegister";
+export { ShareModal } from "./ShareModal";
