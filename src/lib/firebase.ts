@@ -24,7 +24,7 @@ const missing = requiredEntries.filter(([, v]) => !v).map(([k]) => k);
 if (missing.length > 0) {
   throw new Error(
     `Missing required NEXT_PUBLIC env vars: ${missing.join(", ")}. ` +
-      `Ensure you're running the app with the proper env (use Infisical or create .env.local from .env.example).`
+      `Ensure you're running the app with the proper env (set these via GitHub Actions secrets, or create .env.local from .env.example).`
   );
 }
 
