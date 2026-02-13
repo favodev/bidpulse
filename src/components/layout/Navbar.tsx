@@ -51,7 +51,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5" aria-label="BidPulse - Inicio">
             <Image
               src="/assets/logo.png"
               alt="BidPulse Logo"
@@ -77,7 +77,7 @@ export function Navbar() {
 
           {/* Acciones */}
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/auction/create">
+            <Link href="/auction/create" aria-label={t.nav.sellItem}>
               <Button size="sm" variant="primary">
                 {t.nav.sellItem}
               </Button>
@@ -191,12 +191,12 @@ export function Navbar() {
             ) : (
               /* Botones de login/registro (si no está logueado) */
               <div className="flex items-center gap-2">
-                <Link href="/login">
+                <Link href="/login" aria-label={t.nav.login}>
                   <Button size="sm" variant="ghost">
                     {t.nav.login}
                   </Button>
                 </Link>
-                <Link href="/signup">
+                <Link href="/signup" aria-label={t.nav.signup}>
                   <Button size="sm" variant="outline">
                     {t.nav.signup}
                   </Button>
@@ -238,7 +238,7 @@ export function Navbar() {
                   <LanguageToggle />
                 </div>
                 
-                <Link href="/auction/create" onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/auction/create" onClick={() => setMobileMenuOpen(false)} aria-label={t.nav.sellItem}>
                   <Button size="sm" variant="primary" fullWidth>
                     {t.nav.sellItem}
                   </Button>
@@ -246,7 +246,7 @@ export function Navbar() {
 
                 {user ? (
                   <>
-                    <Link href="/profile" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/profile" onClick={() => setMobileMenuOpen(false)} aria-label={t.nav.editProfile}>
                       <Button size="sm" variant="ghost" fullWidth>
                         {t.nav.editProfile}
                       </Button>
@@ -263,12 +263,12 @@ export function Navbar() {
                   </>
                 ) : (
                   <>
-                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/login" onClick={() => setMobileMenuOpen(false)} aria-label={t.nav.login}>
                       <Button size="sm" variant="ghost" fullWidth>
                         {t.nav.login}
                       </Button>
                     </Link>
-                    <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
+                    <Link href="/signup" onClick={() => setMobileMenuOpen(false)} aria-label={t.nav.signup}>
                       <Button size="sm" variant="outline" fullWidth>
                         {t.nav.signup}
                       </Button>

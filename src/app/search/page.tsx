@@ -74,12 +74,8 @@ export default function SearchPage() {
     async function loadAuctions() {
       setLoading(true);
       try {
-        const [sortField, sortOrder] = sortBy.split("-") as [string, "asc" | "desc"];
-        
         const data = await getAuctions({
           status: selectedStatus !== "all" ? selectedStatus : undefined,
-          sortBy: sortField as "endTime" | "currentBid" | "bidsCount" | "createdAt",
-          sortOrder,
           limit: 100,
         });
         setAuctions(data);
@@ -90,7 +86,7 @@ export default function SearchPage() {
       }
     }
     loadAuctions();
-  }, [selectedStatus, sortBy]);
+  }, [selectedStatus]);
 
   // Filtrar resultados
   const filteredAuctions = useMemo(() => {
@@ -123,8 +119,37 @@ export default function SearchPage() {
       }
     }
 
+    // Ordenar client-side
+    const [sortField, sortOrder] = sortBy.split("-") as [string, "asc" | "desc"];
+    results = [...results].sort((a, b) => {
+      let aVal: number;
+      let bVal: number;
+
+      switch (sortField) {
+        case "currentBid":
+          aVal = a.currentBid ?? 0;
+          bVal = b.currentBid ?? 0;
+          break;
+        case "bidsCount":
+          aVal = a.bidsCount ?? 0;
+          bVal = b.bidsCount ?? 0;
+          break;
+        case "createdAt":
+          aVal = a.createdAt?.seconds ?? 0;
+          bVal = b.createdAt?.seconds ?? 0;
+          break;
+        case "endTime":
+        default:
+          aVal = a.endTime?.seconds ?? 0;
+          bVal = b.endTime?.seconds ?? 0;
+          break;
+      }
+
+      return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+    });
+
     return results;
-  }, [auctions, searchQuery, selectedCategory, priceRange]);
+  }, [auctions, searchQuery, selectedCategory, priceRange, sortBy]);
 
   // Limpiar todos los filtros
   const clearAllFilters = () => {

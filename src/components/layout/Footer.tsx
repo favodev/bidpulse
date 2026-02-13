@@ -20,49 +20,81 @@ function GitHubIcon({ className }: { className?: string }) {
 export function Footer() {
   return (
     <footer className="bg-slate-900 border-t border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <Image
-              src="/assets/logo.png"
-              alt="BidPulse"
-              width={24}
-              height={24}
-            />
-            <span className="text-white font-semibold">BidPulse</span>
-          </Link>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Links de navegación del footer */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mb-8">
+          <div>
+            <h4 className="text-white font-semibold text-sm mb-3">Plataforma</h4>
+            <ul className="space-y-2">
+              <li><Link href="/search" className="text-slate-400 hover:text-emerald-400 text-sm transition-colors">Explorar subastas</Link></li>
+              <li><Link href="/auction/create" className="text-slate-400 hover:text-emerald-400 text-sm transition-colors">Vender un artículo</Link></li>
+              <li><Link href="/search?category=electronics" className="text-slate-400 hover:text-emerald-400 text-sm transition-colors">Electrónica</Link></li>
+              <li><Link href="/search?category=fashion" className="text-slate-400 hover:text-emerald-400 text-sm transition-colors">Moda</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-semibold text-sm mb-3">Cuenta</h4>
+            <ul className="space-y-2">
+              <li><Link href="/login" className="text-slate-400 hover:text-emerald-400 text-sm transition-colors">Iniciar sesión</Link></li>
+              <li><Link href="/signup" className="text-slate-400 hover:text-emerald-400 text-sm transition-colors">Crear cuenta</Link></li>
+              <li><Link href="/my-bids" className="text-slate-400 hover:text-emerald-400 text-sm transition-colors">Mis pujas</Link></li>
+              <li><Link href="/my-auctions" className="text-slate-400 hover:text-emerald-400 text-sm transition-colors">Mis subastas</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-semibold text-sm mb-3">Soporte</h4>
+            <ul className="space-y-2">
+              <li><Link href="/contact" className="text-slate-400 hover:text-emerald-400 text-sm transition-colors">Contacto</Link></li>
+              <li><Link href="/favorites" className="text-slate-400 hover:text-emerald-400 text-sm transition-colors">Favoritos</Link></li>
+            </ul>
+          </div>
+        </div>
 
-          {/* Redes sociales y contacto */}
-          <div className="flex items-center gap-2">
-            <Link
-              href="/contact"
-              className="p-2 text-gray-400 hover:text-emerald-500 transition-colors"
-              aria-label="Contacto"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect width="20" height="16" x="2" y="4" rx="2" />
-                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-              </svg>
+        {/* Línea divisora */}
+        <div className="border-t border-slate-800 pt-6">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-2" aria-label="BidPulse - Inicio">
+              <Image
+                src="/assets/logo.png"
+                alt="BidPulse"
+                width={24}
+                height={24}
+              />
+              <span className="text-white font-semibold">BidPulse</span>
             </Link>
-            <a
-              href="https://www.instagram.com/fer_8rtiz/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 text-gray-400 hover:text-pink-500 transition-colors"
-              aria-label="Instagram"
-            >
-              <InstagramIcon className="w-5 h-5" />
-            </a>
-            <a
-              href="https://github.com/favodev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 text-gray-400 hover:text-white transition-colors"
-              aria-label="GitHub"
-            >
-              <GitHubIcon className="w-5 h-5" />
-            </a>
+
+            {/* Redes sociales y contacto */}
+            <div className="flex items-center gap-2">
+              <Link
+                href="/contact"
+                className="p-2 text-gray-400 hover:text-emerald-500 transition-colors"
+                aria-label="Contacto"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="20" height="16" x="2" y="4" rx="2" />
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+              </Link>
+              <a
+                href="https://www.instagram.com/fer_8rtiz/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-gray-400 hover:text-pink-500 transition-colors"
+                aria-label="Instagram"
+              >
+                <InstagramIcon className="w-5 h-5" />
+              </a>
+              <a
+                href="https://github.com/favodev"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-gray-400 hover:text-white transition-colors"
+                aria-label="GitHub"
+              >
+                <GitHubIcon className="w-5 h-5" />
+              </a>
+            </div>
           </div>
         </div>
       </div>

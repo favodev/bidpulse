@@ -128,7 +128,7 @@ export function CategoriesSection() {
 
         {/* Botón ver todas */}
         <div className="flex justify-center">
-          <Link href="/search">
+          <Link href="/search" aria-label={t.home.viewAll}>
             <Button variant="outline" size="md">
               {t.home.viewAll}
             </Button>
