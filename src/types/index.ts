@@ -6,3 +6,4 @@ export * from "./notification.types";
 export * from "./review.types";
 export * from "./message.types";
 export * from "./report.types";
+export * from "./payment.types";

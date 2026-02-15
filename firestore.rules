@@ -146,5 +146,36 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if false;
     }
+
+    // ─── Transactions (pagos) ───
+    match /transactions/{transactionId} {
+      // Comprador o vendedor pueden leer sus propias transacciones
+      allow read: if isSignedIn()
+        && (resource.data.buyerId == request.auth.uid || resource.data.sellerId == request.auth.uid || isAdmin());
+      // Solo backend (admin SDK) crea transacciones — no se permite desde el cliente
+      allow create: if false;
+      // Actualizar estado solo desde backend
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // ─── Payment Methods (métodos de pago guardados) ───
+    match /payment_methods/{methodId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ─── Connect Accounts (cuentas Stripe de vendedores) ───
+    match /connect_accounts/{accountId} {
+      // El vendedor puede leer su propia cuenta Connect
+      allow read: if isSignedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      // Solo backend crea y actualiza cuentas Connect
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
   }
 }

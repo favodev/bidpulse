@@ -46,6 +46,8 @@ export const config = {
     "/reviews/create",
     "/dashboard",
     "/reviews",
+    "/checkout/:path*",
+    "/transactions",
     "/admin/:path*",
   ],
 };

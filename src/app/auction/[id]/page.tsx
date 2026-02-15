@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Clock, Users, ArrowLeft, Heart, Share2, Shield, Trophy, Loader2, Star, MessageCircle, Flag } from "lucide-react";
+import { Clock, Users, ArrowLeft, Heart, Share2, Shield, Trophy, Loader2, Star, MessageCircle, Flag, CreditCard } from "lucide-react";
 import { Auction } from "@/types/auction.types";
 import { Bid } from "@/types/bid.types";
 import {
@@ -469,6 +469,32 @@ export default function AuctionDetailPage() {
               <span>{t.auction.secureTransaction}</span>
             </div>
 
+            {/* Call-to-action para pagar (solo para ganador, si no ha pagado) */}
+            {user && auction.status === "ended" && auction.highestBidderId === user.uid && !(auction as Auction & { paymentStatus?: string }).paymentStatus && (
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0">
+                    <CreditCard className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-white font-medium">
+                      {t.payments?.completePayment || "¡Completa tu pago!"}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      {t.payments?.completePaymentDesc || "Realiza el pago para finalizar tu compra"}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => router.push(`/checkout/${auctionId}`)}
+                  >
+                    <CreditCard className="w-4 h-4 mr-1" />
+                    {t.payments?.payNow || "Pagar"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {/* Call-to-action para dejar review (solo para ganador) */}
             {user && auction.status === "ended" && auction.highestBidderId === user.uid && !hasReview && (
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
@@ -587,24 +613,34 @@ export default function AuctionDetailPage() {
             </p>
             <div className="flex gap-3">
               <button
+                onClick={() => {
+                  setShowWinnerBanner(false);
+                  router.push(`/checkout/${auctionId}`);
+                }}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
+              >
+                <CreditCard className="w-4 h-4" />
+                {t.payments?.payNow || "Pagar ahora"}
+              </button>
+              <button
                 onClick={() => setShowWinnerBanner(false)}
                 className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-xl transition-colors"
               >
                 {t.auction.understood}
               </button>
-              {!hasReview && (
-                <button
-                  onClick={() => {
-                    setShowWinnerBanner(false);
-                    router.push(`/reviews/create?auctionId=${auctionId}`);
-                  }}
-                  className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-medium rounded-xl transition-colors flex items-center justify-center gap-2"
-                >
-                  <Star className="w-4 h-4" />
-                  {t.reviews?.submitReview || "Valorar"}
-                </button>
-              )}
             </div>
+            {!hasReview && (
+              <button
+                onClick={() => {
+                  setShowWinnerBanner(false);
+                  router.push(`/reviews/create?auctionId=${auctionId}`);
+                }}
+                className="w-full mt-3 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-medium rounded-xl transition-colors flex items-center justify-center gap-2 text-sm"
+              >
+                <Star className="w-4 h-4" />
+                {t.reviews?.submitReview || "Valorar vendedor"}
+              </button>
+            )}
           </div>
         </div>
       )}

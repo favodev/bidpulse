@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { User, Menu, X, LogOut, Settings, Heart, BarChart3, Shield } from "lucide-react";
+import { User, Menu, X, LogOut, Settings, Heart, BarChart3, Shield, Receipt } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAuctionAutoFinalize } from "@/hooks/useAuctionAutoFinalize";
 import { Button, LanguageToggle, NotificationCenter, CurrencySelector } from "@/components/ui";
@@ -159,6 +159,15 @@ export function Navbar() {
                       {t.analytics?.title || "Dashboard"}
                     </Link>
 
+                    <Link
+                      href="/transactions"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2 text-gray-300 hover:bg-slate-800 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <Receipt className="w-4 h-4" />
+                      {t.payments?.transactionsTitle || "Transacciones"}
+                    </Link>
+
                     {/* Admin link */}
                     {isAdmin && (
                       <>
@@ -249,6 +258,11 @@ export function Navbar() {
                     <Link href="/profile" onClick={() => setMobileMenuOpen(false)} aria-label={t.nav.editProfile}>
                       <Button size="sm" variant="ghost" fullWidth>
                         {t.nav.editProfile}
+                      </Button>
+                    </Link>
+                    <Link href="/transactions" onClick={() => setMobileMenuOpen(false)}>
+                      <Button size="sm" variant="ghost" fullWidth>
+                        {t.payments?.transactionsTitle || "Transacciones"}
                       </Button>
                     </Link>
                     <button

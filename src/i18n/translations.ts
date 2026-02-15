@@ -696,6 +696,97 @@ export const translations = {
         },
       },
     },
+    // Pagos
+    payments: {
+      // Checkout
+      checkoutTitle: "Checkout",
+      checkoutSubtitle: "Completa el pago para finalizar tu compra",
+      orderSummary: "Resumen del pedido",
+      winningBid: "Puja ganadora",
+      platformFee: "Comisión plataforma",
+      free: "Gratis",
+      total: "Total",
+      seller: "Vendedor",
+      buyer: "Comprador",
+      bidsCount: "Pujas",
+      paymentMethod: "Método de pago",
+      stripeInfo: "Serás redirigido a Stripe para completar el pago de forma segura.",
+      securePayment: "Pago 100% seguro",
+      acceptedCards: "Visa, Mastercard, AMEX",
+      payNow: "Pagar",
+      processing: "Procesando...",
+      termsNotice: "Al realizar el pago, aceptas los términos y condiciones de BidPulse.",
+      backToAuction: "Volver a la subasta",
+      backToBids: "Volver a Mis Pujas",
+      completePayment: "¡Completa tu pago!",
+      completePaymentDesc: "Realiza el pago para finalizar tu compra",
+
+      // Errores
+      auctionNotFound: "Subasta no encontrada",
+      notWinner: "Solo el ganador puede realizar el pago",
+      auctionNotEnded: "La subasta aún no ha finalizado",
+      loadError: "Error al cargar los datos del pago",
+      checkoutError: "Error al iniciar el proceso de pago",
+
+      // Pendiente
+      pendingPayment: "Pago pendiente",
+      pendingPaymentDesc: "Tienes un intento de pago anterior pendiente. Puedes reintentar el pago.",
+
+      // Vendedor sin Connect
+      sellerNotConnected: "Vendedor sin cuenta de pago",
+      sellerNotConnectedDesc: "El vendedor aún no ha configurado su cuenta para recibir pagos. El pago se procesará y se retendrá hasta que complete su configuración.",
+
+      // Éxito
+      successTitle: "¡Pago exitoso!",
+      successSubtitle: "Tu pago ha sido procesado correctamente. El vendedor será notificado.",
+      whatsNext: "¿Qué sigue?",
+      viewAuction: "Ver subasta",
+      contactSeller: "Contactar vendedor",
+      leaveReview: "Dejar reseña",
+      viewTransactions: "Ver historial de transacciones",
+      transactionId: "ID Transacción",
+
+      // Estados
+      status: "Estado",
+      statusPending: "Pendiente",
+      statusProcessing: "Procesando",
+      statusCompleted: "Completado",
+      statusFailed: "Fallido",
+      statusRefunded: "Reembolsado",
+      statusCancelled: "Cancelado",
+
+      // Historial
+      transactionsTitle: "Historial de Transacciones",
+      transactionsSubtitle: "Revisa todas tus compras y ventas",
+      totalTransactions: "Transacciones",
+      totalSpent: "Total gastado",
+      totalEarned: "Total ganado",
+      pendingPaymentsCount: "Pendientes",
+      tabAll: "Todas",
+      tabPurchases: "Compras",
+      tabSales: "Ventas",
+      allStatuses: "Todos los estados",
+      noTransactions: "Sin transacciones",
+      noTransactionsDesc: "Aún no tienes transacciones. Cuando ganes una subasta, podrás realizar el pago aquí.",
+      purchase: "Compra",
+      sale: "Venta",
+
+      // Configuración de pagos (Settings)
+      settingsTitle: "Configuración de Pagos",
+      settingsDesc: "Configura tu cuenta para recibir pagos por tus ventas",
+      connectSetup: "Configura tu cuenta de vendedor",
+      connectSetupDesc: "Conecta tu cuenta bancaria a través de Stripe para recibir pagos cuando vendas artículos en BidPulse.",
+      connectStart: "Configurar con Stripe",
+      connectActive: "Cuenta de pagos activa",
+      connectActiveDesc: "Tu cuenta está configurada para recibir pagos.",
+      connectDashboard: "Abrir panel de Stripe",
+      connectPending: "Configuración pendiente",
+      connectPendingDesc: "Completa la configuración de tu cuenta para empezar a recibir pagos.",
+      connectContinue: "Completar configuración",
+      connectRestricted: "Cuenta restringida",
+      connectRestrictedDesc: "Tu cuenta tiene restricciones. Accede al panel de Stripe para resolver los problemas pendientes.",
+      connectUpdate: "Actualizar información",
+    },
   },
   en: {
     // Navbar
@@ -1392,6 +1483,97 @@ export const translations = {
           other: "Other",
         },
       },
+    },
+    // Payments
+    payments: {
+      // Checkout
+      checkoutTitle: "Checkout",
+      checkoutSubtitle: "Complete your payment to finalize your purchase",
+      orderSummary: "Order Summary",
+      winningBid: "Winning bid",
+      platformFee: "Platform fee",
+      free: "Free",
+      total: "Total",
+      seller: "Seller",
+      buyer: "Buyer",
+      bidsCount: "Bids",
+      paymentMethod: "Payment method",
+      stripeInfo: "You will be redirected to Stripe to complete payment securely.",
+      securePayment: "100% secure payment",
+      acceptedCards: "Visa, Mastercard, AMEX",
+      payNow: "Pay",
+      processing: "Processing...",
+      termsNotice: "By making this payment, you agree to BidPulse's terms and conditions.",
+      backToAuction: "Back to auction",
+      backToBids: "Back to My Bids",
+      completePayment: "Complete your payment!",
+      completePaymentDesc: "Make your payment to finalize the purchase",
+
+      // Errors
+      auctionNotFound: "Auction not found",
+      notWinner: "Only the winner can make the payment",
+      auctionNotEnded: "The auction hasn't ended yet",
+      loadError: "Error loading payment data",
+      checkoutError: "Error starting the payment process",
+
+      // Pending
+      pendingPayment: "Pending payment",
+      pendingPaymentDesc: "You have a previous pending payment attempt. You can retry the payment.",
+
+      // Seller not connected
+      sellerNotConnected: "Seller without payment account",
+      sellerNotConnectedDesc: "The seller hasn't set up their payment account yet. Payment will be processed and held until the seller completes their setup.",
+
+      // Success
+      successTitle: "Payment successful!",
+      successSubtitle: "Your payment has been processed successfully. The seller will be notified.",
+      whatsNext: "What's next?",
+      viewAuction: "View auction",
+      contactSeller: "Contact seller",
+      leaveReview: "Leave a review",
+      viewTransactions: "View transaction history",
+      transactionId: "Transaction ID",
+
+      // Statuses
+      status: "Status",
+      statusPending: "Pending",
+      statusProcessing: "Processing",
+      statusCompleted: "Completed",
+      statusFailed: "Failed",
+      statusRefunded: "Refunded",
+      statusCancelled: "Cancelled",
+
+      // History
+      transactionsTitle: "Transaction History",
+      transactionsSubtitle: "Review all your purchases and sales",
+      totalTransactions: "Transactions",
+      totalSpent: "Total spent",
+      totalEarned: "Total earned",
+      pendingPaymentsCount: "Pending",
+      tabAll: "All",
+      tabPurchases: "Purchases",
+      tabSales: "Sales",
+      allStatuses: "All statuses",
+      noTransactions: "No transactions",
+      noTransactionsDesc: "You don't have any transactions yet. When you win an auction, you'll be able to make the payment here.",
+      purchase: "Purchase",
+      sale: "Sale",
+
+      // Payment Settings
+      settingsTitle: "Payment Settings",
+      settingsDesc: "Set up your account to receive payments from your sales",
+      connectSetup: "Set up your seller account",
+      connectSetupDesc: "Connect your bank account through Stripe to receive payments when you sell items on BidPulse.",
+      connectStart: "Set up with Stripe",
+      connectActive: "Payment account active",
+      connectActiveDesc: "Your account is set up to receive payments.",
+      connectDashboard: "Open Stripe dashboard",
+      connectPending: "Setup pending",
+      connectPendingDesc: "Complete your account setup to start receiving payments.",
+      connectContinue: "Complete setup",
+      connectRestricted: "Account restricted",
+      connectRestrictedDesc: "Your account has restrictions. Access the Stripe dashboard to resolve pending issues.",
+      connectUpdate: "Update information",
     },
   },
 };
