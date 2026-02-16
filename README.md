@@ -25,6 +25,7 @@ BidPulse es una plataforma de subastas online para crear, listar y pujar en art�
 - Recharts (gráficos)
 - Resend (envío de emails)
 - Vitest, ESLint
+ - Stripe (procesamiento de pagos)
 
 ## Autenticación
 
